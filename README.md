@@ -3,9 +3,9 @@
 A slow radio station
 
 
-## Description
+## Dependencies
 
-
+* libshout
 
 
 ## Contact
