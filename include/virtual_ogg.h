@@ -11,4 +11,6 @@ sf_count_t virt_tell(void *user_data);
 
 SF_VIRTUAL_IO *virtual_ogg_create();
 
+void virtual_ogg_destroy(SF_VIRTUAL_IO *sfvirt);
+
 #endif

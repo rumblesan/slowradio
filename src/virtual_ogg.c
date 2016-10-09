@@ -22,7 +22,7 @@ SF_VIRTUAL_IO *virtual_ogg_create() {
 
 sf_count_t virt_get_filelen(void *user_data) {
   printf("Called file length\n");
-  return 1000000;
+  return 0;
 }
 sf_count_t virt_seek(sf_count_t offset, int whence, void *user_data) {
   printf("Called file seek\n");
@@ -39,4 +39,8 @@ sf_count_t virt_write(const void *ptr, sf_count_t count, void *user_data) {
 sf_count_t virt_tell(void *user_data) {
   printf("File tell\n");
   return 0;
+}
+
+void virtual_ogg_destroy(SF_VIRTUAL_IO *sfvirt) {
+  free(sfvirt);
 }
