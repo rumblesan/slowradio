@@ -36,20 +36,32 @@ void filereader_info_destroy(FileReaderInfo *info) {
 void *start_filereader(void *_info) {
   FileReaderInfo *info = _info;
 
+  RingBuffer *rb = rb_create(100);
+
   SF_INFO input_info;
-  SNDFILE *input_file = sf_open(bdata(info->name),
-                                SFM_READ,
-                                &input_info);
+  SNDFILE *input_file = NULL;
+
   SF_INFO output_info;
+  SF_VIRTUAL_IO *virtual_ogg = NULL;
+  SNDFILE *output_file = NULL;
+
+  float *iob = NULL;
+
+  input_file = sf_open(bdata(info->name),
+                       SFM_READ,
+                       &input_info);
+  check(input_file != NULL, "Could not open input file");
   output_info.samplerate = input_info.samplerate;
   output_info.channels = 2;
-  output_info.format = SF_FORMAT_OGG;
+  output_info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
 
-  SF_VIRTUAL_IO *virtual_ogg = virtual_ogg_create();
-  SNDFILE *output_file = sf_open_virtual(virtual_ogg,
-                                         SFM_WRITE,
-                                         &output_info,
-                                         NULL);
+  virtual_ogg = virtual_ogg_create();
+  check(virtual_ogg != NULL, "Could not create virtual ogg");
+  output_file = sf_open_virtual(virtual_ogg,
+                                SFM_WRITE,
+                                &output_info,
+                                rb);
+  check(output_file != NULL, "Could not open output file: %s", sf_strerror(output_file));
   bool finished = false;
 
   int size = 2048;
@@ -57,20 +69,25 @@ void *start_filereader(void *_info) {
   int buffer_size = size * channels;
   int read_amount;
 
-  float iobuffer[buffer_size];
+  iob = malloc(buffer_size * sizeof(float));
  
   printf("Starting loop\n");
   while (!finished) {
-    read_amount = sf_readf_float(input_file, iobuffer, size);
+    read_amount = sf_readf_float(input_file, iob, size);
     printf("Read data %d\n", read_amount);
     if (read_amount < size) {
       printf("Finished\n");
       finished = true;
     }
 
-    sf_writef_float(output_file, iobuffer, read_amount);
+    sf_writef_float(output_file, iob, read_amount);
   }
 
+ error:
+  if (input_file != NULL) sf_close(input_file);
+  if (virtual_ogg != NULL) virtual_ogg_destroy(virtual_ogg);
+  if (output_file != NULL) sf_close(output_file);
+  if (iob != NULL) free(iob);
   pthread_exit(NULL);
   return NULL;
 }
