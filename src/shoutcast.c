@@ -63,23 +63,6 @@ void shoutcast_info_destroy(ShoutCastInfo *info) {
   log_err("Could not destroy shoutcast info");
 }
 
-ShoutAudio *shout_audio_create(unsigned char *data, int len) {
-  ShoutAudio *audio = malloc(sizeof(ShoutAudio));
-  check_mem(audio);
-
-  audio->len  = len;
-  audio->data = data;
-  
-  return audio;
- error:
-  return NULL;
-}
-
-void shout_audio_destroy(ShoutAudio *audio) {
-  free(audio->data);
-  free(audio);
-}
-
 void *start_shoutcast(void *_info) {
 
   ShoutCastInfo *info = _info;

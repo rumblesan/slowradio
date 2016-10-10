@@ -22,11 +22,6 @@ typedef struct ShoutCastInfo {
 
 } ShoutCastInfo;
 
-typedef struct ShoutAudio {
-  unsigned char *data;
-  int len;
-} ShoutAudio;
-
 ShoutCastInfo *shoutcast_info_create(bstring host,
                                      int port,
                                      bstring user,
@@ -35,9 +30,6 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
                                      RingBuffer *audio);
 
 void shoutcast_info_destroy(ShoutCastInfo *info);
-
-ShoutAudio *shout_audio_create(unsigned char *data, int len);
-void shout_audio_destory(ShoutAudio *audio);
 
 void *start_shoutcast(void *_info);
 
