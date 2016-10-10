@@ -7,6 +7,7 @@
 
 #include "filereader.h"
 #include "virtual_ogg.h"
+#include "filechunk.c"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -36,8 +37,6 @@ void filereader_info_destroy(FileReaderInfo *info) {
 void *start_filereader(void *_info) {
   FileReaderInfo *info = _info;
 
-  RingBuffer *rb = rb_create(100);
-
   SF_INFO input_info;
   SNDFILE *input_file = NULL;
 
@@ -60,7 +59,7 @@ void *start_filereader(void *_info) {
   output_file = sf_open_virtual(virtual_ogg,
                                 SFM_WRITE,
                                 &output_info,
-                                rb);
+                                info->audio_out);
   check(output_file != NULL, "Could not open output file: %s", sf_strerror(output_file));
   bool finished = false;
 
@@ -71,16 +70,23 @@ void *start_filereader(void *_info) {
 
   iob = malloc(buffer_size * sizeof(float));
  
-  printf("Starting loop\n");
+  printf("Starting file reader\n");
+  sleep(1);
   while (!finished) {
-    read_amount = sf_readf_float(input_file, iob, size);
-    printf("Read data %d\n", read_amount);
-    if (read_amount < size) {
-      printf("Finished\n");
-      finished = true;
-    }
+    if (!rb_full(info->audio_out)) {
+      read_amount = sf_readf_float(input_file, iob, size);
+      debug("Read data %d", read_amount);
+      if (read_amount < size) {
+        log_info("Finished");
+        finished = true;
+      }
 
-    sf_writef_float(output_file, iob, read_amount);
+      sf_writef_float(output_file, iob, read_amount);
+    } else {
+      //log_info("Ring Buffer is full, so sleeping for a bit");
+      usleep(10);
+      sched_yield();
+    }
   }
 
  error:
