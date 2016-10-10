@@ -37,14 +37,11 @@ sf_count_t virt_read(void *ptr, sf_count_t count, void *user_data) {
 }
 sf_count_t virt_write(const void *ptr, sf_count_t count, void *_rb) {
   // TODO - More error handling here
-  printf("Called file write\n");
   RingBuffer *rb = _rb;
-  log_info("**** rb pointer: %p", rb);
   unsigned char *data = malloc(count * sizeof(unsigned char *));
   memcpy (data, ptr, (size_t) count) ;
   FileChunk *fc = file_chunk_create(data, count);
   int pos = rb_push(rb, fc);
-  log_info("pos is %d", pos);
   return 0;
 }
 sf_count_t virt_tell(void *user_data) {
