@@ -7,7 +7,9 @@ include_directories(include)
 
 set(SOURCES
   "src/filereader.c"
-  "src/pipeline.c"
+  "src/ogg_encoder.c"
+  "src/filechunk.c"
+  "src/floatchunk.c"
   "src/shoutcast.c"
   "src/virtual_ogg.c"
   "src/main.c"
