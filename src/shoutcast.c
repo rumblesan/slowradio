@@ -7,6 +7,8 @@
 
 #include "shoutcast.h"
 
+#include "filechunk.h"
+
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
@@ -82,49 +84,56 @@ void *start_shoutcast(void *_info) {
 
   ShoutCastInfo *info = _info;
 
-  shout_t *shout;
-
   shout_init();
 
-  shout = shout_new();
-  check(!shout, "Could not allocate shout_t");
+  shout_t *shout = shout_new();
 
-  check(shout_set_host(shout, bdata(info->host)) != SHOUTERR_SUCCESS,
+  check(shout != NULL,
+        "Could not allocate shout_t: %s", shout_get_error(shout));
+
+  check(shout_set_host(shout, bdata(info->host)) == SHOUTERR_SUCCESS,
         "Error setting hostname: %s", shout_get_error(shout));
 
-  check(shout_set_protocol(shout, info->protocol) != SHOUTERR_SUCCESS,
+  check(shout_set_protocol(shout, info->protocol) == SHOUTERR_SUCCESS,
         "Error setting protocol: %s", shout_get_error(shout));
 
-  check(shout_set_port(shout, info->port) != SHOUTERR_SUCCESS,
+  check(shout_set_port(shout, info->port) == SHOUTERR_SUCCESS,
         "Error setting port: %s", shout_get_error(shout));
 
-  check(shout_set_password(shout, bdata(info->pass)) != SHOUTERR_SUCCESS,
+  check(shout_set_password(shout, bdata(info->pass)) == SHOUTERR_SUCCESS,
         "Error setting password: %s", shout_get_error(shout));
 
-  check(shout_set_password(shout, bdata(info->mount)) != SHOUTERR_SUCCESS,
+  check(shout_set_mount(shout, bdata(info->mount)) == SHOUTERR_SUCCESS,
         "Error setting mount: %s", shout_get_error(shout));
 
-  check(shout_set_user(shout, bdata(info->user)) != SHOUTERR_SUCCESS,
+  check(shout_set_user(shout, bdata(info->user)) == SHOUTERR_SUCCESS,
         "Error setting user: %s", shout_get_error(shout));
 
-  check(shout_set_format(shout, info->format) != SHOUTERR_SUCCESS,
+  check(shout_set_format(shout, info->format) == SHOUTERR_SUCCESS,
         "Error setting format: %s", shout_get_error(shout));
 
   check(shout_open(shout) == SHOUTERR_SUCCESS,
         "Error connecting: %s", shout_get_error(shout));
 
-  printf("Connected to server...\n");
+  log_info("Connected to server...\n");
 
-  ShoutAudio *audio_in;
-  int ret;
   while (1) {
-    audio_in = rb_pop(info->audio);
-    check(audio_in != NULL, "Could not get audio from audio in");
-    ret = shout_send(shout, audio_in->data, audio_in->len);
-    check(ret != SHOUTERR_SUCCESS, "DEBUG: Send error: %s", shout_get_error(shout));
+    if (!rb_empty(info->audio)) {
+      log_info("Audio available. Starting stream.");
+      break;
+    } else {
+      log_info("Waiting for input audio...");
+      sleep(2);
+    }
+  }
 
-    // TODO - Cleanup audio_in
-
+  while (1) {
+    FileChunk *chunk = rb_pop(info->audio);
+    check(chunk != NULL, "Could not get audio from audio in");
+    int ret = shout_send(shout, chunk->data, chunk->length);
+    file_chunk_destroy(chunk);
+    check(ret == SHOUTERR_SUCCESS,
+          "DEBUG: Send error: %s", shout_get_error(shout));
     shout_sync(shout);
   }
 
