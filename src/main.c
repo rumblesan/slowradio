@@ -6,6 +6,7 @@
 #include <sndfile.h>
 
 #include "filereader.h"
+#include "ogg_encoder.h"
 #include "filechunk.h"
 #include "shoutcast.h"
 
@@ -17,11 +18,14 @@ int main (int argc, char *argv[]) {
 
   printf("Hello, Slow Radio\n");
 
-  RingBuffer *rb = rb_create(100);
+  RingBuffer *fread2encode = rb_create(100);
+  RingBuffer *encode2stream = rb_create(100);
 
-  bstring filename = bfromcstr("foo.ogg");
-  FileReaderInfo *filereader_info = filereader_info_create(filename, rb);
-  pthread_t file_thread;
+  FileReaderInfo *filereader_info =
+    filereader_info_create(bfromcstr("foo.ogg"), fread2encode);
+
+  OggEncoderInfo *ogg_encoder_info =
+    ogg_encoder_info_create(fread2encode, encode2stream);
 
   ShoutCastInfo *sc_info =
     shoutcast_info_create(bfromcstr("127.0.0.1"),
@@ -29,20 +33,28 @@ int main (int argc, char *argv[]) {
                           bfromcstr("source"),
                           bfromcstr("password"),
                           bfromcstr("/test.ogg"),
-                          rb);
+                          encode2stream);
 
-  int rc1 = pthread_create(&file_thread,
+  pthread_t reader_thread;
+  int rc1 = pthread_create(&reader_thread,
                            NULL,
                            &start_filereader,
                            filereader_info);
 
+  pthread_t encoder_thread;
+  int rc2 = pthread_create(&encoder_thread,
+                           NULL,
+                           &start_ogg_encoder,
+                           ogg_encoder_info);
+
   pthread_t shout_thread;
-  int rc2 = pthread_create(&shout_thread,
+  int rc3 = pthread_create(&shout_thread,
                            NULL,
                            &start_shoutcast,
                            sc_info);
 
-  pthread_join(file_thread, NULL);
+  pthread_join(reader_thread, NULL);
+  pthread_join(encoder_thread, NULL);
   pthread_join(shout_thread, NULL);
   return 0;
 }

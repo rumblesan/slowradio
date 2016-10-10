@@ -7,7 +7,8 @@
 
 #include "filereader.h"
 #include "virtual_ogg.h"
-#include "filechunk.c"
+#include "filechunk.h"
+#include "floatchunk.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -40,60 +41,36 @@ void *start_filereader(void *_info) {
   SF_INFO input_info;
   SNDFILE *input_file = NULL;
 
-  SF_INFO output_info;
-  SF_VIRTUAL_IO *virtual_ogg = NULL;
-  SNDFILE *output_file = NULL;
+  check(info != NULL, "Invalid info data passed");
 
-  float *iob = NULL;
-
-  input_file = sf_open(bdata(info->name),
-                       SFM_READ,
-                       &input_info);
+  input_file = sf_open(bdata(info->name), SFM_READ, &input_info);
   check(input_file != NULL, "Could not open input file");
-  output_info.samplerate = input_info.samplerate;
-  output_info.channels = 2;
-  output_info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
-
-  virtual_ogg = virtual_ogg_create();
-  check(virtual_ogg != NULL, "Could not create virtual ogg");
-  output_file = sf_open_virtual(virtual_ogg,
-                                SFM_WRITE,
-                                &output_info,
-                                info->audio_out);
-  check(output_file != NULL, "Could not open output file: %s", sf_strerror(output_file));
-  bool finished = false;
 
   int size = 2048;
   int channels = 2;
   int buffer_size = size * channels;
-  int read_amount;
 
-  iob = malloc(buffer_size * sizeof(float));
- 
   printf("Starting file reader\n");
-  sleep(1);
-  while (!finished) {
-    if (!rb_full(info->audio_out)) {
-      read_amount = sf_readf_float(input_file, iob, size);
-      debug("Read data %d", read_amount);
-      if (read_amount < size) {
-        log_info("Finished");
-        finished = true;
-      }
 
-      sf_writef_float(output_file, iob, read_amount);
+  while (true) {
+    if (!rb_full(info->audio_out)) {
+      float *iob = malloc(buffer_size * sizeof(float));
+      int read_amount = sf_readf_float(input_file, iob, size);
+      FloatChunk *chunk = float_chunk_create(iob, read_amount);
+
+      rb_push(info->audio_out, chunk);
+
+      if (read_amount < size) break;
     } else {
-      //log_info("Ring Buffer is full, so sleeping for a bit");
-      usleep(10);
       sched_yield();
+      usleep(10);
     }
   }
 
  error:
+  log_info("File reader finished");
+  if (info != NULL) filereader_info_destroy(info);
   if (input_file != NULL) sf_close(input_file);
-  if (virtual_ogg != NULL) virtual_ogg_destroy(virtual_ogg);
-  if (output_file != NULL) sf_close(output_file);
-  if (iob != NULL) free(iob);
   pthread_exit(NULL);
   return NULL;
 }
