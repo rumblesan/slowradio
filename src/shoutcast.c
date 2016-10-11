@@ -102,10 +102,10 @@ void *start_shoutcast(void *_info) {
 
   while (1) {
     if (!rb_empty(info->audio)) {
-      log_info("Audio available. Starting stream.");
+      log_info("Shoutcast: Audio available.");
       break;
     } else {
-      log_info("Waiting for input audio...");
+      log_info("Shoutcast: Waiting for input audio...");
       sleep(2);
     }
   }
