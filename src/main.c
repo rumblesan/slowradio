@@ -22,7 +22,8 @@ int main (int argc, char *argv[]) {
   RingBuffer *encode2stream = rb_create(100);
 
   FileReaderInfo *filereader_info =
-    filereader_info_create(bfromcstr("foo.ogg"), fread2encode);
+    filereader_info_create(bfromcstr(argv[1]), fread2stretch);
+
 
   OggEncoderInfo *ogg_encoder_info =
     ogg_encoder_info_create(fread2encode, encode2stream);
