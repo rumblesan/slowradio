@@ -24,28 +24,33 @@ SF_VIRTUAL_IO *virtual_ogg_create() {
 }
 
 sf_count_t virt_get_filelen(void *user_data) {
-  printf("Called file length\n");
+  debug("Called file length");
   return 0;
 }
 sf_count_t virt_seek(sf_count_t offset, int whence, void *user_data) {
-  printf("Called file seek\n");
+  debug("Called file seek");
   return 0;
 }
 sf_count_t virt_read(void *ptr, sf_count_t count, void *user_data) {
-  printf("Called file read\n");
+  debug("Called file read");
   return 0;
 }
 sf_count_t virt_write(const void *ptr, sf_count_t count, void *_rb) {
-  // TODO - More error handling here
   RingBuffer *rb = _rb;
+  if (rb_full(rb)) return 0;
+
   unsigned char *data = malloc(count * sizeof(unsigned char *));
-  memcpy (data, ptr, (size_t) count) ;
+  check_mem(data);
+  memcpy(data, ptr, (size_t) count) ;
   FileChunk *fc = file_chunk_create(data, count);
-  int pos = rb_push(rb, fc);
+  check(fc != NULL, "Could not create file chunk");
+  rb_push(rb, fc);
+  return count;
+ error:
   return 0;
 }
 sf_count_t virt_tell(void *user_data) {
-  printf("File tell\n");
+  debug("File tell\n");
   return 0;
 }
 
