@@ -57,7 +57,17 @@ void *start_ogg_encoder(void *_info) {
   check(output_file != NULL,
         "Could not open output file: %s", sf_strerror(output_file));
 
-  printf("Starting file reader\n");
+  log_info("Starting ogg encoder\n");
+
+  while (1) {
+    if (!rb_empty(info->audio_in)) {
+      log_info("Encoder: Audio available");
+      break;
+    } else {
+      log_info("Encoder: Waiting for input audio...");
+      sleep(2);
+    }
+  }
 
   while (true) {
     if (!rb_full(info->audio_out) && !rb_empty(info->audio_in)) {
