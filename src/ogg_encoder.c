@@ -73,7 +73,9 @@ void *start_ogg_encoder(void *_info) {
     if (!rb_full(info->audio_out) && !rb_empty(info->audio_in)) {
       FloatChunk *chunk = rb_pop(info->audio_in);
       check(chunk != NULL, "Could not get audio from audio in");
-      sf_writef_float(output_file, chunk->data, chunk->length);
+      // TODO - Fix this division by channels
+      // information should be encoded in chunk somehow
+      sf_writef_float(output_file, chunk->data, chunk->length / output_info.channels);
       float_chunk_destroy(chunk);
     } else {
       sched_yield();

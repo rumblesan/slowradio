@@ -10,6 +10,7 @@ set(SOURCES
   "src/ogg_encoder.c"
   "src/filechunk.c"
   "src/floatchunk.c"
+  "src/stretcher.c"
   "src/shoutcast.c"
   "src/virtual_ogg.c"
   "src/main.c"
@@ -22,6 +23,10 @@ target_link_libraries(slow shout)
 find_package(BCLib REQUIRED)
 include_directories("${BCLIB_INCLUDE_DIRS}")
 target_link_libraries(slow bclib)
+
+find_package(LibPStretch REQUIRED)
+include_directories("${LIBPSTRETCH_INCLUDE_DIRS}")
+target_link_libraries(slow pstretch)
 
 target_link_libraries(slow sndfile)
 
