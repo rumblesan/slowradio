@@ -123,6 +123,16 @@ void *start_stretcher(void *_info) {
     }
   }
 
+  while (true) {
+    if (!rb_full(info->audio_out)) {
+      rb_push(info->audio_out, finished_message());
+      break;
+    } else {
+      sched_yield();
+      usleep(10);
+    }
+  }
+
  error:
   log_info("Stretcher: Finished");
   if (input_msg != NULL) message_destroy(input_msg);

@@ -66,10 +66,10 @@ void *start_filereader(void *_info) {
     }
   }
 
-  Message *finished  = finished_message();
   while (true) {
     if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, finished);
+      rb_push(info->audio_out, finished_message());
+      break;
     } else {
       sched_yield();
       usleep(10);

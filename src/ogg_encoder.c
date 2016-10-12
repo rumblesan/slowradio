@@ -94,6 +94,16 @@ void *start_ogg_encoder(void *_info) {
     }
   }
 
+  while (true) {
+    if (!rb_full(info->audio_out)) {
+      rb_push(info->audio_out, finished_message());
+      break;
+    } else {
+      sched_yield();
+      usleep(10);
+    }
+  }
+
  error:
   log_info("Ogg encoder finished");
   if (info != NULL) ogg_encoder_info_destroy(info);
