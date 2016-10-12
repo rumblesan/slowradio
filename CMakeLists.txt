@@ -12,6 +12,7 @@ set(SOURCES
   "src/stretcher.c"
   "src/shoutcast.c"
   "src/virtual_ogg.c"
+  "src/config.c"
   "src/main.c"
   )
 
@@ -28,6 +29,7 @@ include_directories("${LIBPSTRETCH_INCLUDE_DIRS}")
 target_link_libraries(slow pstretch)
 
 target_link_libraries(slow sndfile)
+target_link_libraries(slow config)
 
 #option (WITH_TESTS "build tests" ON)
 

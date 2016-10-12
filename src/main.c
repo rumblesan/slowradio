@@ -9,6 +9,7 @@
 #include "stretcher.h"
 #include "ogg_encoder.h"
 #include "shoutcast.h"
+#include "config.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -18,33 +19,44 @@ int main (int argc, char *argv[]) {
 
   log_info("Hello, Slow Radio");
 
+
+  char *config_path = argv[1];
+  char *file_path = argv[2];
+
+  RadioConfig *radio_config = read_config(config_path);
+
   RingBuffer *fread2stretch = rb_create(100);
   RingBuffer *stretch2encode = rb_create(100);
   RingBuffer *encode2stream = rb_create(100);
 
   FileReaderInfo *filereader_info =
-    filereader_info_create(bfromcstr(argv[1]),
-                           2, 4096, 20,
+    filereader_info_create(bfromcstr(file_path),
+                           radio_config->channels,
+                           radio_config->filereader.read_size,
+                           radio_config->filereader.usleep_time,
                            fread2stretch);
 
   StretcherInfo *stretcher_info =
-    stretcher_info_create(5, 4096,
-                          20, 2,
+    stretcher_info_create(radio_config->stretcher.stretch,
+                          radio_config->stretcher.window_size,
+                          radio_config->stretcher.usleep_time,
+                          radio_config->channels,
                           fread2stretch,
                           stretch2encode);
 
   OggEncoderInfo *ogg_encoder_info =
-    ogg_encoder_info_create(2, 44100,
+    ogg_encoder_info_create(radio_config->channels,
+                            radio_config->encoder.samplerate,
                             SF_FORMAT_OGG | SF_FORMAT_VORBIS,
-                            1000,
+                            radio_config->encoder.usleep_time,
                             stretch2encode, encode2stream);
 
   ShoutCastInfo *sc_info =
-    shoutcast_info_create(bfromcstr("127.0.0.1"),
-                          9090,
-                          bfromcstr("source"),
-                          bfromcstr("password"),
-                          bfromcstr("/test.ogg"),
+    shoutcast_info_create(radio_config->shoutcast.host,
+                          radio_config->shoutcast.port,
+                          radio_config->shoutcast.source,
+                          radio_config->shoutcast.password,
+                          radio_config->shoutcast.mount,
                           SHOUT_PROTOCOL_HTTP,
                           SHOUT_FORMAT_OGG,
                           encode2stream);
@@ -77,4 +89,6 @@ int main (int argc, char *argv[]) {
   pthread_join(encoder_thread, NULL);
   pthread_join(shout_thread, NULL);
   return 0;
+ error:
+  return 1;
 }
