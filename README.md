@@ -5,7 +5,13 @@ A slow radio station
 
 ## Dependencies
 
+Third-party libraries
 * libshout
+* libsndfile
+
+My own libraries
+* bclib
+* libpstretch
 
 
 ## Contact
