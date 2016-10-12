@@ -46,7 +46,7 @@ sf_count_t virt_write(const void *ptr, sf_count_t count, void *_rb) {
   check_mem(data);
   memcpy(data, ptr, (size_t) count) ;
   Message *msg = file_chunk_message(data, count);
-  check(msg != NULL, "Could not create file chunk message");
+  check(msg != NULL, "Virtual Ogg: Could not create file chunk message");
   rb_push(rb, msg);
   return count;
  error:

@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <pthread.h>
 #include <unistd.h>
+#include <stdbool.h>
 
 #include <shout/shout.h>
 
@@ -26,22 +27,22 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
   ShoutCastInfo *info = malloc(sizeof(ShoutCastInfo));
   check_mem(info);
 
-  check(host != NULL, "Invalid host passed");
+  check(host != NULL, "Shoutcast: Invalid host passed");
   info->host = host;
   info->port = port;
 
-  check(user != NULL, "Invalid user passed");
+  check(user != NULL, "Shoutcast: Invalid user passed");
   info->user = user;
-  check(pass != NULL, "Invalid pass passed");
+  check(pass != NULL, "Shoutcast: Invalid pass passed");
   info->pass = pass;
 
-  check(mount != NULL, "Invalid mount passed");
+  check(mount != NULL, "Shoutcast: Invalid mount passed");
   info->mount = mount;
 
   info->protocol = protocol;
   info->format   = format;
 
-  check(audio != NULL, "Invalid audio ring buffer passed");
+  check(audio != NULL, "Shoutcast: Invalid audio ring buffer passed");
   info->audio = audio;
 
   return info;
@@ -50,32 +51,33 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
 }
 
 void shoutcast_info_destroy(ShoutCastInfo *info) {
-  check(info != NULL, "Invalid ShoutCastInfo value");
-  check(info->host != NULL, "Invalid host value");
+  check(info != NULL, "Shoutcast: Invalid info");
+  check(info->host != NULL, "Shoutcast: Invalid host value");
   bdestroy(info->host);
-  check(info->user != NULL, "Invalid user value");
+  check(info->user != NULL, "Shoutcast: Invalid user value");
   bdestroy(info->user);
-  check(info->pass != NULL, "Invalid pass value");
+  check(info->pass != NULL, "Shoutcast: Invalid pass value");
   bdestroy(info->pass);
-  check(info->mount != NULL, "Invalid mount value");
+  check(info->mount != NULL, "Shoutcast: Invalid mount value");
   bdestroy(info->mount);
   free(info);
   return;
  error:
-  log_err("Could not destroy shoutcast info");
+  log_err("Shoutcast: Could not destroy info");
 }
 
 void *start_shoutcast(void *_info) {
 
   ShoutCastInfo *info = _info;
 
+  int startup_wait = 2;
   while (1) {
     if (!rb_empty(info->audio)) {
       log_info("Shoutcast: Audio available.");
       break;
     } else {
       log_info("Shoutcast: Waiting for input audio...");
-      sleep(2);
+      sleep(startup_wait);
     }
   }
 
@@ -84,37 +86,37 @@ void *start_shoutcast(void *_info) {
   shout_t *shout = shout_new();
 
   check(shout != NULL,
-        "Could not allocate shout_t: %s", shout_get_error(shout));
+        "Shoutcast: Could not allocate shout_t: %s", shout_get_error(shout));
 
   check(shout_set_host(shout, bdata(info->host)) == SHOUTERR_SUCCESS,
-        "Error setting hostname: %s", shout_get_error(shout));
+        "Shoutcast: Error setting hostname: %s", shout_get_error(shout));
 
   check(shout_set_protocol(shout, info->protocol) == SHOUTERR_SUCCESS,
-        "Error setting protocol: %s", shout_get_error(shout));
+        "Shoutcast: Error setting protocol: %s", shout_get_error(shout));
 
   check(shout_set_port(shout, info->port) == SHOUTERR_SUCCESS,
-        "Error setting port: %s", shout_get_error(shout));
+        "Shoutcast: Error setting port: %s", shout_get_error(shout));
 
   check(shout_set_password(shout, bdata(info->pass)) == SHOUTERR_SUCCESS,
-        "Error setting password: %s", shout_get_error(shout));
+        "Shoutcast: Error setting password: %s", shout_get_error(shout));
 
   check(shout_set_mount(shout, bdata(info->mount)) == SHOUTERR_SUCCESS,
-        "Error setting mount: %s", shout_get_error(shout));
+        "Shoutcast: Error setting mount: %s", shout_get_error(shout));
 
   check(shout_set_user(shout, bdata(info->user)) == SHOUTERR_SUCCESS,
-        "Error setting user: %s", shout_get_error(shout));
+        "Shoutcast: Error setting user: %s", shout_get_error(shout));
 
   check(shout_set_format(shout, info->format) == SHOUTERR_SUCCESS,
-        "Error setting format: %s", shout_get_error(shout));
+        "Shoutcast: Error setting format: %s", shout_get_error(shout));
 
   check(shout_open(shout) == SHOUTERR_SUCCESS,
-        "Error connecting: %s", shout_get_error(shout));
-
-  log_info("Connected to server...\n");
+        "Shoutcast: Error connecting: %s", shout_get_error(shout));
 
   Message *input_msg;
   FileChunk *input_audio;
-  while (1) {
+
+  log_info("Shoutcast: Connected to server...");
+  while (true) {
     input_msg = rb_pop(info->audio);
     check(input_msg != NULL, "Shoutcast: Could not get input message");
     if (input_msg->type == FINISHED) {
@@ -125,7 +127,7 @@ void *start_shoutcast(void *_info) {
       input_audio = input_msg->payload;
       int ret = shout_send(shout, input_audio->data, input_audio->length);
       check(ret == SHOUTERR_SUCCESS,
-            "DEBUG: Send error: %s", shout_get_error(shout));
+            "Shoutcast: Send error: %s", shout_get_error(shout));
       message_destroy(input_msg);
     } else {
       log_err("Shoutcast: Received invalid message of type %d", input_msg->type);
@@ -135,12 +137,13 @@ void *start_shoutcast(void *_info) {
   }
 
  error:
-  log_err("Killing shoutcast thread");
+  log_info("Shoutcast: Finished");
   if (shout) {
     shout_close(shout);
     shout_shutdown();
   }
   shoutcast_info_destroy(info);
+  log_info("Shoutcast: Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

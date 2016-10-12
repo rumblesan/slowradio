@@ -50,39 +50,40 @@ void *start_ogg_encoder(void *_info) {
   SF_VIRTUAL_IO *virtual_ogg = NULL;
   SNDFILE *output_file = NULL;
 
-  check(info != NULL, "Invalid info data passed");
+  check(info != NULL, "Encoder: Invalid info data passed");
 
   output_info.samplerate = info->samplerate;
   output_info.channels = info->channels;
   output_info.format = info->format;
 
   virtual_ogg = virtual_ogg_create();
-  check(virtual_ogg != NULL, "Could not create virtual ogg");
+  check(virtual_ogg != NULL, "Encoder: Could not create virtual ogg");
   output_file = sf_open_virtual(virtual_ogg,
                                 SFM_WRITE,
                                 &output_info,
                                 info->audio_out);
   check(output_file != NULL,
-        "Could not open output file: %s", sf_strerror(output_file));
+        "Encoder: Could not open output file: %s", sf_strerror(output_file));
 
-  log_info("Starting ogg encoder\n");
-
-  while (1) {
+  int startup_wait = 1;
+  while (true) {
     if (!rb_empty(info->audio_in)) {
       log_info("Encoder: Audio available");
       break;
     } else {
       log_info("Encoder: Waiting for input audio...");
-      sleep(2);
+      sleep(startup_wait);
     }
   }
 
   Message *input_msg      = NULL;
   AudioArray *input_audio = NULL;
+
+  log_info("Encoder: Starting");
   while (true) {
     if (!rb_full(info->audio_out) && !rb_empty(info->audio_in)) {
       input_msg = rb_pop(info->audio_in);
-      check(input_msg != NULL, "Could not get audio from audio in");
+      check(input_msg != NULL, "Encoder: Could not get audio from audio in");
       if (input_msg->type == FINISHED) {
         log_info("Encoder: Finished message received");
         message_destroy(input_msg);
@@ -114,10 +115,11 @@ void *start_ogg_encoder(void *_info) {
   }
 
  error:
-  log_info("Ogg encoder finished");
+  log_info("Encoder: Finished");
   if (info != NULL) ogg_encoder_info_destroy(info);
   if (virtual_ogg != NULL) virtual_ogg_destroy(virtual_ogg);
   if (output_file != NULL) sf_close(output_file);
+  log_info("Encoder: Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

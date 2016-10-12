@@ -53,13 +53,11 @@ void *start_stretcher(void *_info) {
 
   AudioStream *stream = audio_stream_create(info->audio_in);
 
-  debug("window: %d  stretch: %f  channels: %d", info->window, info->stretch, info->channels);
   Stretch *stretch = stretch_create(info->channels,
                                     info->window,
                                     info->stretch,
                                     &audio_file_stream_reader,
-                                    stream 
-                                    );
+                                    stream);
   Message *input_msg = NULL;
   AudioArray *input_audio = NULL;
   AudioBuffer *windowed = NULL;
@@ -67,13 +65,14 @@ void *start_stretcher(void *_info) {
   float *floats = NULL;
   Message *output_audio = NULL;
 
-  while (1) {
+  int startup_wait = 1;
+  while (true) {
     if (!rb_empty(info->audio_in)) {
       log_info("Stretcher: Audio available");
       break;
     } else {
       log_info("Stretcher: Waiting for input audio...");
-      sleep(2);
+      sleep(startup_wait);
     }
   }
 
@@ -153,6 +152,7 @@ void *start_stretcher(void *_info) {
   if (stretch != NULL) stretch_destroy(stretch);
   if (stream != NULL) audio_stream_destroy(stream);
   if (info != NULL) stretcher_info_destroy(info);
+  log_info("Stretcher: Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

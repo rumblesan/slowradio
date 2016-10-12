@@ -16,7 +16,7 @@
 
 int main (int argc, char *argv[]) {
 
-  printf("Hello, Slow Radio\n");
+  log_info("Hello, Slow Radio");
 
   RingBuffer *fread2stretch = rb_create(100);
   RingBuffer *stretch2encode = rb_create(100);

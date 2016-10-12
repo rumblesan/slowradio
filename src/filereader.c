@@ -27,7 +27,7 @@ FileReaderInfo *filereader_info_create(bstring name,
   info->read_size     = read_size;
   info->usleep_amount = usleep_amount;
 
-  check(audio_out != NULL, "Invalid audio out buffer passed");
+  check(audio_out != NULL, "FileReader: Invalid audio out buffer passed");
   info->audio_out = audio_out;
 
   return info;
@@ -50,17 +50,18 @@ void *start_filereader(void *_info) {
   Message *out_message = NULL;
   int read_amount = 0;
 
-  check(info != NULL, "Invalid info data passed");
+  check(info != NULL, "FileReader: Invalid info data passed");
 
   input_file = sf_open(bdata(info->name), SFM_READ, &input_info);
-  check(input_file != NULL, "Could not open input file");
-  check(input_info.channels == info->channels, "FileReader: Only accepting files with %d channels", info->channels);
+  check(input_file != NULL, "FileReader: Could not open input file");
+  check(input_info.channels == info->channels,
+        "FileReader: Only accepting files with %d channels", info->channels);
 
   int size = info->read_size;
   int channels = info->channels;
   int buffer_size = size * channels;
 
-  log_info("Starting file reader\n");
+  log_info("FileReader: Starting");
 
   while (true) {
     if (!rb_full(info->audio_out)) {
@@ -71,7 +72,8 @@ void *start_filereader(void *_info) {
       out_message = audio_array_message(iob, channels, read_amount);
       iob = NULL;
 
-      check(out_message != NULL, "Could not create audio array message");
+      check(out_message != NULL,
+            "FileReader: Could not create audio array message");
       rb_push(info->audio_out, out_message);
       out_message = NULL;
 
