@@ -13,10 +13,12 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-StretcherInfo *stretcher_info_create(RingBuffer *audio_in,
-                                     RingBuffer *audio_out,
-                                     int window,
-                                     float stretch) {
+StretcherInfo *stretcher_info_create(float stretch,
+                                     int window_size,
+                                     int usleep_amount,
+                                     int channels,
+                                     RingBuffer *audio_in,
+                                     RingBuffer *audio_out) {
 
   StretcherInfo *info = malloc(sizeof(StretcherInfo));
   check_mem(info);
@@ -27,9 +29,10 @@ StretcherInfo *stretcher_info_create(RingBuffer *audio_in,
   check(audio_out != NULL, "Invalid audio out buffer passed");
   info->audio_out = audio_out;
 
-  info->window = window;
+  info->window = window_size;
   info->stretch = stretch;
-  info->channels = 2;
+  info->channels = channels;
+  info->usleep_amount = usleep_amount;
 
   return info;
  error:
@@ -126,7 +129,7 @@ void *start_stretcher(void *_info) {
       output_audio = NULL;
     } else {
       sched_yield();
-      usleep(1000);
+      usleep(info->usleep_amount);
     }
   }
 
@@ -136,7 +139,7 @@ void *start_stretcher(void *_info) {
       break;
     } else {
       sched_yield();
-      usleep(10);
+      usleep(info->usleep_amount);
     }
   }
 

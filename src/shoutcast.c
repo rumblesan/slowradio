@@ -18,6 +18,8 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
                                      bstring user,
                                      bstring pass,
                                      bstring mount,
+                                     int protocol,
+                                     int format,
                                      RingBuffer *audio
                                      ) {
 
@@ -36,8 +38,8 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
   check(mount != NULL, "Invalid mount passed");
   info->mount = mount;
 
-  info->protocol = SHOUT_PROTOCOL_HTTP;
-  info->format = SHOUT_FORMAT_OGG;
+  info->protocol = protocol;
+  info->format   = format;
 
   check(audio != NULL, "Invalid audio ring buffer passed");
   info->audio = audio;

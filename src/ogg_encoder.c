@@ -13,7 +13,11 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-OggEncoderInfo *ogg_encoder_info_create(RingBuffer *audio_in,
+OggEncoderInfo *ogg_encoder_info_create(int channels,
+                                        int samplerate,
+                                        int format,
+                                        int usleep_time,
+                                        RingBuffer *audio_in,
                                         RingBuffer *audio_out) {
 
   OggEncoderInfo *info = malloc(sizeof(OggEncoderInfo));
@@ -24,6 +28,11 @@ OggEncoderInfo *ogg_encoder_info_create(RingBuffer *audio_in,
 
   check(audio_out != NULL, "Invalid audio out buffer passed");
   info->audio_out = audio_out;
+
+  info->channels    = channels;
+  info->samplerate  = samplerate;
+  info->format      = format;
+  info->usleep_time = usleep_time;
 
   return info;
  error:
@@ -43,9 +52,9 @@ void *start_ogg_encoder(void *_info) {
 
   check(info != NULL, "Invalid info data passed");
 
-  output_info.samplerate = 44100;
-  output_info.channels = 2;
-  output_info.format = SF_FORMAT_OGG | SF_FORMAT_VORBIS;
+  output_info.samplerate = info->samplerate;
+  output_info.channels = info->channels;
+  output_info.format = info->format;
 
   virtual_ogg = virtual_ogg_create();
   check(virtual_ogg != NULL, "Could not create virtual ogg");
@@ -90,7 +99,7 @@ void *start_ogg_encoder(void *_info) {
       }
     } else {
       sched_yield();
-      usleep(1000);
+      usleep(info->usleep_time);
     }
   }
 
@@ -100,7 +109,7 @@ void *start_ogg_encoder(void *_info) {
       break;
     } else {
       sched_yield();
-      usleep(10);
+      usleep(info->usleep_time);
     }
   }
 

@@ -23,15 +23,21 @@ int main (int argc, char *argv[]) {
   RingBuffer *encode2stream = rb_create(100);
 
   FileReaderInfo *filereader_info =
-    filereader_info_create(bfromcstr(argv[1]), fread2stretch);
+    filereader_info_create(bfromcstr(argv[1]),
+                           2, 4096, 20,
+                           fread2stretch);
 
   StretcherInfo *stretcher_info =
-    stretcher_info_create(fread2stretch,
-                          stretch2encode,
-                          4096, 1);
+    stretcher_info_create(5, 4096,
+                          20, 2,
+                          fread2stretch,
+                          stretch2encode);
 
   OggEncoderInfo *ogg_encoder_info =
-    ogg_encoder_info_create(stretch2encode, encode2stream);
+    ogg_encoder_info_create(2, 44100,
+                            SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+                            1000,
+                            stretch2encode, encode2stream);
 
   ShoutCastInfo *sc_info =
     shoutcast_info_create(bfromcstr("127.0.0.1"),
@@ -39,6 +45,8 @@ int main (int argc, char *argv[]) {
                           bfromcstr("source"),
                           bfromcstr("password"),
                           bfromcstr("/test.ogg"),
+                          SHOUT_PROTOCOL_HTTP,
+                          SHOUT_FORMAT_OGG,
                           encode2stream);
 
   pthread_t reader_thread;

@@ -8,12 +8,22 @@
 typedef struct FileReaderInfo {
 
   bstring name;
-  
+
+  int channels;
+
+  int read_size;
+
+  int usleep_amount;
+
   RingBuffer *audio_out;
 
 } FileReaderInfo;
 
-FileReaderInfo *filereader_info_create(bstring name, RingBuffer *audio_out);
+FileReaderInfo *filereader_info_create(bstring name,
+                                       int channels,
+                                       int read_size,
+                                       int usleep_amount,
+                                       RingBuffer *audio_out);
 
 void filereader_info_destroy(FileReaderInfo *info);
 

@@ -27,6 +27,8 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
                                      bstring user,
                                      bstring pass,
                                      bstring mount,
+                                     int protocol,
+                                     int format,
                                      RingBuffer *audio);
 
 void shoutcast_info_destroy(ShoutCastInfo *info);

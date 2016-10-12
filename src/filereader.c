@@ -13,12 +13,19 @@
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
-FileReaderInfo *filereader_info_create(bstring name, RingBuffer *audio_out) {
+FileReaderInfo *filereader_info_create(bstring name,
+                                       int channels,
+                                       int read_size,
+                                       int usleep_amount,
+                                       RingBuffer *audio_out) {
 
   FileReaderInfo *info = malloc(sizeof(FileReaderInfo));
   check_mem(info);
 
-  info->name = name;
+  info->name          = name;
+  info->channels      = channels;
+  info->read_size     = read_size;
+  info->usleep_amount = usleep_amount;
 
   check(audio_out != NULL, "Invalid audio out buffer passed");
   info->audio_out = audio_out;
@@ -47,9 +54,10 @@ void *start_filereader(void *_info) {
 
   input_file = sf_open(bdata(info->name), SFM_READ, &input_info);
   check(input_file != NULL, "Could not open input file");
+  check(input_info.channels == info->channels, "FileReader: Only accepting files with %d channels", info->channels);
 
-  int size = 2048;
-  int channels = input_info.channels;
+  int size = info->read_size;
+  int channels = info->channels;
   int buffer_size = size * channels;
 
   log_info("Starting file reader\n");
@@ -70,7 +78,7 @@ void *start_filereader(void *_info) {
       if (read_amount < size) break;
     } else {
       sched_yield();
-      usleep(10);
+      usleep(info->usleep_amount);
     }
   }
 
@@ -80,7 +88,7 @@ void *start_filereader(void *_info) {
       break;
     } else {
       sched_yield();
-      usleep(10);
+      usleep(info->usleep_amount);
     }
   }
 
