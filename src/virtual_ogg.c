@@ -53,7 +53,7 @@ sf_count_t virt_write(const void *ptr, sf_count_t count, void *_rb) {
   return 0;
 }
 sf_count_t virt_tell(void *user_data) {
-  debug("File tell\n");
+  debug("Called file tell");
   return 0;
 }
 
