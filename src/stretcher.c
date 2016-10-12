@@ -82,6 +82,7 @@ void *start_stretcher(void *_info) {
       if (input_msg->type == FINISHED) {
         log_info("Stretcher: Finished message received");
         message_destroy(input_msg);
+        input_msg = NULL;
         break;
       } else if (input_msg->type == AUDIOARRAY) {
         input_audio = input_msg->payload;
@@ -90,9 +91,11 @@ void *start_stretcher(void *_info) {
                             input_audio->channels,
                             input_audio->per_channel_length);
         message_destroy(input_msg);
+        input_msg = NULL;
       } else {
         log_err("Stretcher: Received invalid message of type %d", input_msg->type);
         message_destroy(input_msg);
+        input_msg = NULL;
       }
     }
     if (!stretch->need_more_audio && !rb_full(info->audio_out)) {
@@ -101,6 +104,7 @@ void *start_stretcher(void *_info) {
       fft_run(stretch->fft, windowed);
       stretched = stretch_output(stretch, windowed);
       check(stretched != NULL, "Stretcher: Could not get stretched audio");
+      windowed = NULL;
 
       int buffer_size = stretched->channels * stretched->size;
       floats = malloc(buffer_size * sizeof(float)); /*  */
@@ -111,12 +115,15 @@ void *start_stretcher(void *_info) {
           floats[pos] = stretched->buffers[i][j];
         }
       }
-
       output_audio = audio_array_message(floats, stretched->channels, buffer_size);
       check(output_audio != NULL, "Stretcher: Output message issue");
+
+      audio_buffer_destroy(stretched);
+      stretched = NULL;
+
       floats = NULL;
       rb_push(info->audio_out, output_audio);
-      audio_buffer_destroy(stretched);
+      output_audio = NULL;
     } else {
       sched_yield();
       usleep(1000);
@@ -143,5 +150,6 @@ void *start_stretcher(void *_info) {
   if (stretch != NULL) stretch_destroy(stretch);
   if (stream != NULL) audio_stream_destroy(stream);
   if (info != NULL) stretcher_info_destroy(info);
+  pthread_exit(NULL);
   return NULL;
 }

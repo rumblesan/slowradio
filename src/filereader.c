@@ -29,7 +29,6 @@ FileReaderInfo *filereader_info_create(bstring name, RingBuffer *audio_out) {
 }
 
 void filereader_info_destroy(FileReaderInfo *info) {
-  rb_destroy(info->audio_out);
   bdestroy(info->name);
   free(info);
 }
@@ -39,6 +38,10 @@ void *start_filereader(void *_info) {
 
   SF_INFO input_info;
   SNDFILE *input_file = NULL;
+
+  float *iob = NULL;
+  Message *out_message = NULL;
+  int read_amount = 0;
 
   check(info != NULL, "Invalid info data passed");
 
@@ -53,12 +56,17 @@ void *start_filereader(void *_info) {
 
   while (true) {
     if (!rb_full(info->audio_out)) {
-      float *iob = malloc(buffer_size * sizeof(float));
+      iob = malloc(buffer_size * sizeof(float));
       check_mem(iob);
-      int read_amount = sf_readf_float(input_file, iob, size);
-      Message *msg = audio_array_message(iob, channels, read_amount);
-      check(msg != NULL, "Could not create audio array message");
-      rb_push(info->audio_out, msg);
+
+      read_amount = sf_readf_float(input_file, iob, size);
+      out_message = audio_array_message(iob, channels, read_amount);
+      iob = NULL;
+
+      check(out_message != NULL, "Could not create audio array message");
+      rb_push(info->audio_out, out_message);
+      out_message = NULL;
+
       if (read_amount < size) break;
     } else {
       sched_yield();
@@ -77,9 +85,11 @@ void *start_filereader(void *_info) {
   }
 
  error:
-  log_info("File reader finished");
+  log_info("FileReader: Finished");
   if (info != NULL) filereader_info_destroy(info);
   if (input_file != NULL) sf_close(input_file);
+  if (iob != NULL) free(iob);
+  log_info("FileReader: Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

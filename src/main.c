@@ -28,7 +28,7 @@ int main (int argc, char *argv[]) {
   StretcherInfo *stretcher_info =
     stretcher_info_create(fread2stretch,
                           stretch2encode,
-                          4096, 20);
+                          4096, 1);
 
   OggEncoderInfo *ogg_encoder_info =
     ogg_encoder_info_create(stretch2encode, encode2stream);
