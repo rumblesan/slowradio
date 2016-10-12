@@ -3,7 +3,7 @@
 
 #include "virtual_ogg.h"
 
-#include "filechunk.h"
+#include "messages.h"
 
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
@@ -37,14 +37,17 @@ sf_count_t virt_read(void *ptr, sf_count_t count, void *user_data) {
 }
 sf_count_t virt_write(const void *ptr, sf_count_t count, void *_rb) {
   RingBuffer *rb = _rb;
-  if (rb_full(rb)) return 0;
+  if (rb_full(rb)) {
+    log_err("Virtual Ogg: Could not write to output buffer");
+    return 0;
+  }
 
   unsigned char *data = malloc(count * sizeof(unsigned char *));
   check_mem(data);
   memcpy(data, ptr, (size_t) count) ;
-  FileChunk *fc = file_chunk_create(data, count);
-  check(fc != NULL, "Could not create file chunk");
-  rb_push(rb, fc);
+  Message *msg = file_chunk_message(data, count);
+  check(msg != NULL, "Could not create file chunk message");
+  rb_push(rb, msg);
   return count;
  error:
   return 0;

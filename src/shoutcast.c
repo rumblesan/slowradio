@@ -7,7 +7,7 @@
 
 #include "shoutcast.h"
 
-#include "filechunk.h"
+#include "messages.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -67,6 +67,16 @@ void *start_shoutcast(void *_info) {
 
   ShoutCastInfo *info = _info;
 
+  while (1) {
+    if (!rb_empty(info->audio)) {
+      log_info("Shoutcast: Audio available.");
+      break;
+    } else {
+      log_info("Shoutcast: Waiting for input audio...");
+      sleep(2);
+    }
+  }
+
   shout_init();
 
   shout_t *shout = shout_new();
@@ -100,23 +110,25 @@ void *start_shoutcast(void *_info) {
 
   log_info("Connected to server...\n");
 
+  Message *input_msg;
+  FileChunk *input_audio;
   while (1) {
-    if (!rb_empty(info->audio)) {
-      log_info("Shoutcast: Audio available.");
+    input_msg = rb_pop(info->audio);
+    check(input_msg != NULL, "Shoutcast: Could not get input message");
+    if (input_msg->type == FINISHED) {
+      log_info("Shoutcast: Finished message received");
+      message_destroy(input_msg);
       break;
+    } else if (input_msg->type == FILECHUNK) {
+      input_audio = input_msg->payload;
+      int ret = shout_send(shout, input_audio->data, input_audio->length);
+      check(ret == SHOUTERR_SUCCESS,
+            "DEBUG: Send error: %s", shout_get_error(shout));
+      message_destroy(input_msg);
     } else {
-      log_info("Shoutcast: Waiting for input audio...");
-      sleep(2);
+      log_err("Shoutcast: Received invalid message of type %d", input_msg->type);
+      message_destroy(input_msg);
     }
-  }
-
-  while (1) {
-    FileChunk *chunk = rb_pop(info->audio);
-    check(chunk != NULL, "Could not get audio from audio in");
-    int ret = shout_send(shout, chunk->data, chunk->length);
-    file_chunk_destroy(chunk);
-    check(ret == SHOUTERR_SUCCESS,
-          "DEBUG: Send error: %s", shout_get_error(shout));
     shout_sync(shout);
   }
 

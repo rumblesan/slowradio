@@ -7,8 +7,7 @@
 
 #include "filereader.h"
 #include "virtual_ogg.h"
-#include "filechunk.h"
-#include "floatchunk.h"
+#include "messages.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -47,20 +46,30 @@ void *start_filereader(void *_info) {
   check(input_file != NULL, "Could not open input file");
 
   int size = 2048;
-  int channels = 2;
+  int channels = input_info.channels;
   int buffer_size = size * channels;
 
-  printf("Starting file reader\n");
+  log_info("Starting file reader\n");
 
   while (true) {
     if (!rb_full(info->audio_out)) {
       float *iob = malloc(buffer_size * sizeof(float));
+      check_mem(iob);
       int read_amount = sf_readf_float(input_file, iob, size);
-      FloatChunk *chunk = float_chunk_create(iob, read_amount);
-
-      rb_push(info->audio_out, chunk);
-
+      Message *msg = audio_array_message(iob, channels, read_amount);
+      check(msg != NULL, "Could not create audio array message");
+      rb_push(info->audio_out, msg);
       if (read_amount < size) break;
+    } else {
+      sched_yield();
+      usleep(10);
+    }
+  }
+
+  Message *finished  = finished_message();
+  while (true) {
+    if (!rb_full(info->audio_out)) {
+      rb_push(info->audio_out, finished);
     } else {
       sched_yield();
       usleep(10);

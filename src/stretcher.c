@@ -7,7 +7,7 @@
 
 #include "stretcher.h"
 
-#include "floatchunk.h"
+#include "messages.h"
 
 #include "pstretch/pstretch.h"
 #include "bclib/dbg.h"
@@ -57,11 +57,12 @@ void *start_stretcher(void *_info) {
                                     &audio_file_stream_reader,
                                     stream 
                                     );
-  FloatChunk *next_input = NULL;
+  Message *input_msg = NULL;
+  AudioArray *input_audio = NULL;
   AudioBuffer *windowed = NULL;
   AudioBuffer *stretched = NULL;
   float *floats = NULL;
-  FloatChunk *output_audio = NULL;
+  Message *output_audio = NULL;
 
   while (1) {
     if (!rb_empty(info->audio_in)) {
@@ -76,14 +77,23 @@ void *start_stretcher(void *_info) {
   log_info("Stretcher: Starting");
   while (true) {
     if (stretch->need_more_audio && !rb_empty(info->audio_in)) {
-      next_input = rb_pop(info->audio_in);
-      check(next_input != NULL,
-            "Stretcher: Could not read next input from audio in");
-      stretch_load_floats(stretch,
-                          next_input->data,
-                          info->channels,
-                          next_input->length);
-      float_chunk_destroy(next_input);
+      input_msg = rb_pop(info->audio_in);
+      check(input_msg != NULL, "Stretcher: Could not read input message");
+      if (input_msg->type == FINISHED) {
+        log_info("Stretcher: Finished message received");
+        message_destroy(input_msg);
+        break;
+      } else if (input_msg->type == AUDIOARRAY) {
+        input_audio = input_msg->payload;
+        stretch_load_floats(stretch,
+                            input_audio->audio,
+                            input_audio->channels,
+                            input_audio->per_channel_length);
+        message_destroy(input_msg);
+      } else {
+        log_err("Stretcher: Received invalid message of type %d", input_msg->type);
+        message_destroy(input_msg);
+      }
     }
     if (!stretch->need_more_audio && !rb_full(info->audio_out)) {
       windowed = stretch_window(stretch);
@@ -102,8 +112,8 @@ void *start_stretcher(void *_info) {
         }
       }
 
-      output_audio = float_chunk_create(floats, buffer_size);
-      check(output_audio != NULL, "Stretcher: Output audio issue");
+      output_audio = audio_array_message(floats, stretched->channels, buffer_size);
+      check(output_audio != NULL, "Stretcher: Output message issue");
       floats = NULL;
       rb_push(info->audio_out, output_audio);
       audio_buffer_destroy(stretched);
@@ -115,11 +125,11 @@ void *start_stretcher(void *_info) {
 
  error:
   log_info("Stretcher: Finished");
-  if (next_input != NULL) float_chunk_destroy(next_input);
+  if (input_msg != NULL) message_destroy(input_msg);
   if (windowed != NULL) audio_buffer_destroy(windowed);
   if (stretched != NULL) audio_buffer_destroy(stretched);
   if (floats != NULL) free(floats);
-  if (output_audio != NULL) float_chunk_destroy(output_audio);
+  if (output_audio != NULL) message_destroy(output_audio);
   if (stretch != NULL) stretch_destroy(stretch);
   if (stream != NULL) audio_stream_destroy(stream);
   if (info != NULL) stretcher_info_destroy(info);

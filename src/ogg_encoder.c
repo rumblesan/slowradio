@@ -8,8 +8,7 @@
 #include "ogg_encoder.h"
 
 #include "virtual_ogg.h"
-#include "filechunk.h"
-#include "floatchunk.h"
+#include "messages.h"
 
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
@@ -69,14 +68,26 @@ void *start_ogg_encoder(void *_info) {
     }
   }
 
+  Message *input_msg      = NULL;
+  AudioArray *input_audio = NULL;
   while (true) {
     if (!rb_full(info->audio_out) && !rb_empty(info->audio_in)) {
-      FloatChunk *chunk = rb_pop(info->audio_in);
-      check(chunk != NULL, "Could not get audio from audio in");
-      // TODO - Fix this division by channels
-      // information should be encoded in chunk somehow
-      sf_writef_float(output_file, chunk->data, chunk->length / output_info.channels);
-      float_chunk_destroy(chunk);
+      input_msg = rb_pop(info->audio_in);
+      check(input_msg != NULL, "Could not get audio from audio in");
+      if (input_msg->type == FINISHED) {
+        log_info("Encoder: Finished message received");
+        message_destroy(input_msg);
+        break;
+      } else if (input_msg->type == AUDIOARRAY) {
+        input_audio = input_msg->payload;
+        sf_writef_float(output_file,
+                        input_audio->audio,
+                        input_audio->per_channel_length);
+        message_destroy(input_msg);
+      } else {
+        log_err("Encoder: Received invalid message of type %d", input_msg->type);
+        message_destroy(input_msg);
+      }
     } else {
       sched_yield();
       usleep(1000);
