@@ -43,21 +43,10 @@ void stretcher_info_destroy(StretcherInfo *info) {
   free(info);
 }
 
-AudioBuffer *audio_file_stream_reader(AudioStream *stream,
-                                      int sample_count) {
-  return NULL;
-}
-
 void *start_stretcher(void *_info) {
   StretcherInfo *info = _info;
 
-  AudioStream *stream = audio_stream_create(info->audio_in);
-
-  Stretch *stretch = stretch_create(info->channels,
-                                    info->window,
-                                    info->stretch,
-                                    &audio_file_stream_reader,
-                                    stream);
+  Stretch *stretch = stretch_create(info->channels, info->window, info->stretch);
   Message *input_msg = NULL;
   AudioArray *input_audio = NULL;
   AudioBuffer *windowed = NULL;
@@ -150,7 +139,6 @@ void *start_stretcher(void *_info) {
   if (floats != NULL) free(floats);
   if (output_audio != NULL) message_destroy(output_audio);
   if (stretch != NULL) stretch_destroy(stretch);
-  if (stream != NULL) audio_stream_destroy(stream);
   if (info != NULL) stretcher_info_destroy(info);
   log_info("Stretcher: Cleaned up");
   pthread_exit(NULL);
