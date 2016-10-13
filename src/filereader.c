@@ -68,8 +68,7 @@ bstring get_random_file(bstring pattern) {
   }
   if(globbuf.gl_pathc > 0) globfree(&globbuf);
 
-  srand(time(NULL));
-  int randpos = floor(rand() / (float)RAND_MAX * list_count(filelist));
+  int randpos = floor((rand() / (float)RAND_MAX) * list_count(filelist));
   bstring fname = bstrcpy(list_get(filelist, randpos));
 
   LIST_FOREACH(filelist, first, next, cur) {
@@ -90,6 +89,8 @@ void *start_filereader(void *_info) {
   float *iob = NULL;
   Message *out_message = NULL;
   int read_amount = 0;
+
+  srand(time(NULL));
 
   check(info != NULL, "FileReader: Invalid info data passed");
 
