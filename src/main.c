@@ -60,31 +60,36 @@ int main (int argc, char *argv[]) {
                           SHOUT_FORMAT_OGG,
                           encode2stream);
 
-  pthread_t reader_thread;
+  pthread_t reader_thread = NULL;
   int rc1 = pthread_create(&reader_thread,
                            NULL,
                            &start_filereader,
                            filereader_info);
+  check(!rc1, "Error creating File Reader thread");
 
-  pthread_t stretcher_thread;
+  pthread_t stretcher_thread = NULL;
   int rc2 = pthread_create(&stretcher_thread,
                            NULL,
                            &start_stretcher,
                            stretcher_info);
+  check(!rc2, "Error creating File Reader thread");
 
-  pthread_t encoder_thread;
+  pthread_t encoder_thread = NULL;
   int rc3 = pthread_create(&encoder_thread,
                            NULL,
                            &start_ogg_encoder,
                            ogg_encoder_info);
+  check(!rc3, "Error creating File Reader thread");
 
-  pthread_t shout_thread;
+  pthread_t shout_thread = NULL;
   int rc4 = pthread_create(&shout_thread,
                            NULL,
                            &start_shoutcast,
                            sc_info);
+  check(!rc4, "Error creating File Reader thread");
 
   pthread_join(reader_thread, NULL);
+  pthread_join(stretcher_thread, NULL);
   pthread_join(encoder_thread, NULL);
   pthread_join(shout_thread, NULL);
   return 0;
