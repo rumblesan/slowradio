@@ -8,6 +8,7 @@ A slow radio station
 Third-party libraries
 * libshout
 * libsndfile
+* libconfig
 
 My own libraries
 * bclib
