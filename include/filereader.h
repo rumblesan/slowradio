@@ -7,21 +7,21 @@
 
 typedef struct FileReaderInfo {
 
-  bstring name;
-
   int channels;
 
   int read_size;
 
   int usleep_amount;
 
+  bstring pattern;
+
   RingBuffer *audio_out;
 
 } FileReaderInfo;
 
-FileReaderInfo *filereader_info_create(bstring name,
-                                       int channels,
+FileReaderInfo *filereader_info_create(int channels,
                                        int read_size,
+                                       bstring pattern,
                                        int usleep_amount,
                                        RingBuffer *audio_out);
 

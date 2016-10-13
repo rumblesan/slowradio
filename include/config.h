@@ -4,6 +4,7 @@
 #include "bclib/bstrlib.h"
 
 typedef struct FileReaderConfig {
+  bstring pattern;
   int read_size;
   int usleep_time;
 } FileReaderConfig;

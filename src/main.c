@@ -21,7 +21,6 @@ int main (int argc, char *argv[]) {
 
 
   char *config_path = argv[1];
-  char *file_path = argv[2];
 
   RadioConfig *radio_config = read_config(config_path);
 
@@ -30,9 +29,9 @@ int main (int argc, char *argv[]) {
   RingBuffer *encode2stream = rb_create(100);
 
   FileReaderInfo *filereader_info =
-    filereader_info_create(bfromcstr(file_path),
-                           radio_config->channels,
+    filereader_info_create(radio_config->channels,
                            radio_config->filereader.read_size,
+                           radio_config->filereader.pattern,
                            radio_config->filereader.usleep_time,
                            fread2stretch);
 

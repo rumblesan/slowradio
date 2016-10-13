@@ -31,14 +31,16 @@ RadioConfig *read_config(char *config_path) {
   // File Reader config
   config_setting_t *frsetting = config_lookup(cfg, "filereader");
   check(frsetting != NULL, "Could not load filereader config");
-  readok = config_setting_lookup_int(frsetting, "read_size",
-                                     &(radio_config->filereader.read_size));
-  check(readok, "%s:%d - %s", config_error_file(cfg),
+  int frreadsize = config_setting_lookup_int(frsetting, "read_size",
+                                             &(radio_config->filereader.read_size));
+  const char *file_pattern;
+  int frpattern = config_setting_lookup_string(frsetting, "pattern", &(file_pattern));
+  int frsleep = config_setting_lookup_int(frsetting, "usleep_time",
+                                          &(radio_config->filereader.usleep_time));
+  check(frreadsize && frpattern && frsleep,
+        "%s:%d - %s", config_error_file(cfg),
         config_error_line(cfg), config_error_text(cfg));
-  readok = config_setting_lookup_int(frsetting, "usleep_time",
-                                     &(radio_config->filereader.usleep_time));
-  check(readok, "%s:%d - %s", config_error_file(cfg),
-        config_error_line(cfg), config_error_text(cfg));
+  radio_config->filereader.pattern = bfromcstr(file_pattern);
 
   // Stretcher config
   config_setting_t *strsetting = config_lookup(cfg, "stretcher");

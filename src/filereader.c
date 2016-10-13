@@ -3,6 +3,11 @@
 #include <unistd.h>
 #include <stdbool.h>
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <math.h>
+#include <time.h>
+#include <glob.h>
 #include <sndfile.h>
 
 #include "filereader.h"
@@ -10,22 +15,23 @@
 #include "messages.h"
 
 #include "bclib/dbg.h"
+#include "bclib/list.h"
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
-FileReaderInfo *filereader_info_create(bstring name,
-                                       int channels,
+FileReaderInfo *filereader_info_create(int channels,
                                        int read_size,
+                                       bstring pattern,
                                        int usleep_amount,
                                        RingBuffer *audio_out) {
 
   FileReaderInfo *info = malloc(sizeof(FileReaderInfo));
   check_mem(info);
 
-  info->name          = name;
   info->channels      = channels;
   info->read_size     = read_size;
   info->usleep_amount = usleep_amount;
+  info->pattern       = pattern;
 
   check(audio_out != NULL, "FileReader: Invalid audio out buffer passed");
   info->audio_out = audio_out;
@@ -36,8 +42,43 @@ FileReaderInfo *filereader_info_create(bstring name,
 }
 
 void filereader_info_destroy(FileReaderInfo *info) {
-  bdestroy(info->name);
+  bdestroy(info->pattern);
   free(info);
+}
+
+bool is_regular_file(const char *path) {
+  struct stat path_stat;
+  stat(path, &path_stat);
+  return S_ISREG(path_stat.st_mode);
+}
+
+bstring get_random_file(bstring pattern) {
+  glob_t globbuf;
+
+  List *filelist = list_create();
+  check(filelist != NULL, "Could not create file list");
+
+  check(!glob(bdata(pattern), GLOB_TILDE, NULL, &globbuf), "Could not glob folder");
+
+  for(size_t i = 0; i < globbuf.gl_pathc; i += 1) {
+    char *name = globbuf.gl_pathv[i];
+    if (is_regular_file(name)) {
+      list_push(filelist, bfromcstr(name));
+    }
+  }
+  if(globbuf.gl_pathc > 0) globfree(&globbuf);
+
+  srand(time(NULL));
+  int randpos = floor(rand() / (float)RAND_MAX * list_count(filelist));
+  bstring fname = bstrcpy(list_get(filelist, randpos));
+
+  LIST_FOREACH(filelist, first, next, cur) {
+    bdestroy(cur->value);
+  }
+  list_destroy(filelist);
+  return fname;
+ error:
+  return bfromcstr("");
 }
 
 void *start_filereader(void *_info) {
@@ -52,11 +93,6 @@ void *start_filereader(void *_info) {
 
   check(info != NULL, "FileReader: Invalid info data passed");
 
-  input_file = sf_open(bdata(info->name), SFM_READ, &input_info);
-  check(input_file != NULL, "FileReader: Could not open input file");
-  check(input_info.channels == info->channels,
-        "FileReader: Only accepting files with %d channels", info->channels);
-
   int size = info->read_size;
   int channels = info->channels;
   int buffer_size = size * channels;
@@ -64,6 +100,24 @@ void *start_filereader(void *_info) {
   log_info("FileReader: Starting");
 
   while (true) {
+    if (input_file == NULL) {
+      log_info("FileReader: Need to open new file");
+      bstring newfile = get_random_file(info->pattern);
+      if (blength(newfile) == 0) {
+        log_err("FileReader: Could not get random file");
+        continue;
+      }
+      log_info("FileReader: New file: %s", bdata(newfile));
+      input_file = sf_open(bdata(newfile), SFM_READ, &input_info);
+      if (input_file == NULL) {
+        log_err("FileReader: Could not open input file. Trying another");
+        continue;
+      }
+      bdestroy(newfile);
+      if(input_info.channels != info->channels) {
+        log_err("FileReader: Only accepting files with %d channels", info->channels);
+      }
+    }
     if (!rb_full(info->audio_out)) {
       iob = malloc(buffer_size * sizeof(float));
       check_mem(iob);
@@ -77,7 +131,10 @@ void *start_filereader(void *_info) {
       rb_push(info->audio_out, out_message);
       out_message = NULL;
 
-      if (read_amount < size) break;
+      if (read_amount < size) {
+        sf_close(input_file);
+        input_file = NULL;
+      }
     } else {
       sched_yield();
       usleep(info->usleep_amount);
