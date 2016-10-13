@@ -30,6 +30,7 @@ target_link_libraries(slow pstretch)
 
 target_link_libraries(slow sndfile)
 target_link_libraries(slow config)
+target_link_libraries(slow vorbis vorbisfile)
 
 #option (WITH_TESTS "build tests" ON)
 

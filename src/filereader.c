@@ -8,7 +8,9 @@
 #include <math.h>
 #include <time.h>
 #include <glob.h>
-#include <sndfile.h>
+
+#include "vorbis/codec.h"
+#include "vorbis/vorbisfile.h"
 
 #include "filereader.h"
 #include "virtual_ogg.h"
@@ -80,15 +82,32 @@ bstring get_random_file(bstring pattern) {
   return bfromcstr("");
 }
 
+void debug_ov(OggVorbis_File *vf) {
+  char **ptr=ov_comment(vf,-1)->user_comments;
+  vorbis_info *vi=ov_info(vf,-1);
+  while(*ptr){
+    fprintf(stderr,"%s\n",*ptr);
+    ++ptr;
+  }
+  fprintf(stderr,"\nBitstream is %d channel, %ldHz\n",vi->channels,vi->rate);
+  fprintf(stderr,"Encoded by: %s\n\n",ov_comment(vf,-1)->vendor);
+}
+
+int ov_channels(OggVorbis_File *vf) {
+  vorbis_info *vi=ov_info(vf,-1);
+  return vi->channels;
+}
+
 void *start_filereader(void *_info) {
   FileReaderInfo *info = _info;
 
-  SF_INFO input_info;
-  SNDFILE *input_file = NULL;
+  OggVorbis_File *vf = NULL;
+  bool opened = false;
 
-  float *iob = NULL;
+  float **oggiob = NULL;
+  float *out_audio = NULL;
   Message *out_message = NULL;
-  int read_amount = 0;
+  long read_amount = 0;
 
   srand(time(NULL));
 
@@ -98,10 +117,18 @@ void *start_filereader(void *_info) {
   int channels = info->channels;
   int buffer_size = size * channels;
 
+  oggiob = malloc(2 * sizeof(float *));
+  check_mem(oggiob);
+  oggiob[0] = malloc(buffer_size * sizeof(float));
+  check_mem(oggiob[0]);
+  oggiob[1] = malloc(buffer_size * sizeof(float));
+  check_mem(oggiob[1]);
+
   log_info("FileReader: Starting");
+  int current_section;
 
   while (true) {
-    if (input_file == NULL) {
+    if (!opened && !rb_full(info->audio_out)) {
       log_info("FileReader: Need to open new file");
       bstring newfile = get_random_file(info->pattern);
       if (blength(newfile) == 0) {
@@ -109,33 +136,57 @@ void *start_filereader(void *_info) {
         continue;
       }
       log_info("FileReader: New file: %s", bdata(newfile));
-      input_file = sf_open(bdata(newfile), SFM_READ, &input_info);
-      if (input_file == NULL) {
+      vf = malloc(sizeof(OggVorbis_File));
+      check_mem(vf);
+
+      int ovopen_err = ov_fopen(bdata(newfile), vf);
+      log_info("done");
+      if (ovopen_err) {
         log_err("FileReader: Could not open input file. Trying another");
+        opened = false;
+        free(vf);
+        vf = NULL;
         continue;
       }
-      bdestroy(newfile);
-      if(input_info.channels != info->channels) {
+      if(ov_channels(vf) != info->channels) {
         log_err("FileReader: Only accepting files with %d channels", info->channels);
+        ov_clear(vf);
+        free(vf);
+        vf = NULL;
+        continue;
       }
-    }
-    if (!rb_full(info->audio_out)) {
-      iob = malloc(buffer_size * sizeof(float));
-      check_mem(iob);
+      opened = true;
+      log_info("Debugging file");
+      debug_ov(vf);
+      bdestroy(newfile);
 
-      read_amount = sf_readf_float(input_file, iob, size);
-      out_message = audio_array_message(iob, channels, read_amount);
-      iob = NULL;
+    } else if (!rb_full(info->audio_out)) {
+
+      read_amount = ov_read_float(vf, &oggiob, size, &current_section);
+      if (read_amount == 0) {
+        ov_clear(vf);
+        opened = false;
+        continue;
+      }
+
+      out_audio = malloc(channels * read_amount * sizeof(float));
+      check_mem(out_audio);
+
+      for (int c = 0; c < channels; c += 1) {
+        for (int s = 0; s < read_amount; s += 1) {
+          int pos = (s * channels) + c;
+          out_audio[pos] = oggiob[c][s];
+        }
+      }
+
+      out_message = audio_array_message(out_audio, channels, read_amount);
+      out_audio = NULL;
 
       check(out_message != NULL,
             "FileReader: Could not create audio array message");
       rb_push(info->audio_out, out_message);
       out_message = NULL;
 
-      if (read_amount < size) {
-        sf_close(input_file);
-        input_file = NULL;
-      }
     } else {
       sched_yield();
       usleep(info->usleep_amount);
@@ -155,8 +206,12 @@ void *start_filereader(void *_info) {
  error:
   log_info("FileReader: Finished");
   if (info != NULL) filereader_info_destroy(info);
-  if (input_file != NULL) sf_close(input_file);
-  if (iob != NULL) free(iob);
+  if (oggiob != NULL) {
+    if (oggiob[0] != NULL) free(oggiob[0]);
+    if (oggiob[1] != NULL) free(oggiob[1]);
+    free(oggiob);
+  }
+  if (vf != NULL) free(vf);
   log_info("FileReader: Cleaned up");
   pthread_exit(NULL);
   return NULL;
