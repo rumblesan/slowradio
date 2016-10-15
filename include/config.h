@@ -26,6 +26,10 @@ typedef struct ShoutcastConfig {
   bstring source;
   bstring password;
   bstring mount;
+  bstring name;
+  bstring description;
+  bstring genre;
+  bstring url;
 } ShoutcastConfig;
 
 typedef struct RadioConfig {

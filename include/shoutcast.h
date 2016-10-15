@@ -14,6 +14,11 @@ typedef struct ShoutCastInfo {
   bstring user;
   bstring pass;
 
+  bstring stream_name;
+  bstring stream_description;
+  bstring stream_genre;
+  bstring stream_url;
+
   bstring mount;
   int protocol;
   int format;
@@ -27,6 +32,10 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
                                      bstring user,
                                      bstring pass,
                                      bstring mount,
+                                     bstring name,
+                                     bstring description,
+                                     bstring genre,
+                                     bstring url,
                                      int protocol,
                                      int format,
                                      RingBuffer *audio);

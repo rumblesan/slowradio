@@ -69,24 +69,34 @@ RadioConfig *read_config(char *config_path) {
   check(shoutsetting != NULL, "Could not load shoutcast config");
 
   const char *shout_host;
-  int shouthost = config_setting_lookup_string(shoutsetting, "host", &(shout_host));
-  int shoutport = config_setting_lookup_int(shoutsetting, "port",
-                                            &(radio_config->shoutcast.port));
   const char *shout_source;
-  int shoutsource = config_setting_lookup_string(shoutsetting, "source", &(shout_source));
   const char *shout_pass;
-  int shoutpass = config_setting_lookup_string(shoutsetting, "password", &(shout_pass));
   const char *shout_mount;
-  int shoutmount = config_setting_lookup_string(shoutsetting, "mount", &(shout_mount));
+  const char *shout_name;
+  const char *shout_description;
+  const char *shout_genre;
+  const char *shout_url;
+  check(config_setting_lookup_string(shoutsetting, "host", &(shout_host)) &&
+        config_setting_lookup_int(shoutsetting, "port", &(radio_config->shoutcast.port)) &&
+        config_setting_lookup_string(shoutsetting, "source", &(shout_source)) &&
+        config_setting_lookup_string(shoutsetting, "password", &(shout_pass)) &&
+        config_setting_lookup_string(shoutsetting, "mount", &(shout_mount)) && 
+        config_setting_lookup_string(shoutsetting, "name", &(shout_name)) &&
+        config_setting_lookup_string(shoutsetting, "description", &(shout_description)) &&
+        config_setting_lookup_string(shoutsetting, "genre", &(shout_genre)) &&
+        config_setting_lookup_string(shoutsetting, "url", &(shout_url)),
 
-  check(shouthost && shoutport && shoutsource && shoutpass && shoutmount,
         "%s:%d - %s", config_error_file(cfg),
         config_error_line(cfg), config_error_text(cfg));
 
-  radio_config->shoutcast.host     = bfromcstr(shout_host);
-  radio_config->shoutcast.source   = bfromcstr(shout_source);
-  radio_config->shoutcast.password = bfromcstr(shout_pass);
-  radio_config->shoutcast.mount    = bfromcstr(shout_mount);
+  radio_config->shoutcast.host        = bfromcstr(shout_host);
+  radio_config->shoutcast.source      = bfromcstr(shout_source);
+  radio_config->shoutcast.password    = bfromcstr(shout_pass);
+  radio_config->shoutcast.mount       = bfromcstr(shout_mount);
+  radio_config->shoutcast.name        = bfromcstr(shout_name);
+  radio_config->shoutcast.description = bfromcstr(shout_description);
+  radio_config->shoutcast.genre       = bfromcstr(shout_genre);
+  radio_config->shoutcast.url         = bfromcstr(shout_url);
 
   if (cfg != NULL) config_destroy(cfg);
   return radio_config;

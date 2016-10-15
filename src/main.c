@@ -56,6 +56,10 @@ int main (int argc, char *argv[]) {
                           radio_config->shoutcast.source,
                           radio_config->shoutcast.password,
                           radio_config->shoutcast.mount,
+                          radio_config->shoutcast.name,
+                          radio_config->shoutcast.description,
+                          radio_config->shoutcast.genre,
+                          radio_config->shoutcast.url,
                           SHOUT_PROTOCOL_HTTP,
                           SHOUT_FORMAT_OGG,
                           encode2stream);

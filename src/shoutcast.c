@@ -19,6 +19,10 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
                                      bstring user,
                                      bstring pass,
                                      bstring mount,
+                                     bstring name,
+                                     bstring description,
+                                     bstring genre,
+                                     bstring url,
                                      int protocol,
                                      int format,
                                      RingBuffer *audio
@@ -38,6 +42,16 @@ ShoutCastInfo *shoutcast_info_create(bstring host,
 
   check(mount != NULL, "Shoutcast: Invalid mount passed");
   info->mount = mount;
+
+
+  check(name != NULL, "Shoutcast: Invalid name passed");
+  info->stream_name = name;
+  check(description != NULL, "Shoutcast: Invalid description passed");
+  info->stream_description = description;
+  check(genre != NULL, "Shoutcast: Invalid genre passed");
+  info->stream_genre = genre;
+  check(url != NULL, "Shoutcast: Invalid url passed");
+  info->stream_url = url;
 
   info->protocol = protocol;
   info->format   = format;
@@ -60,6 +74,16 @@ void shoutcast_info_destroy(ShoutCastInfo *info) {
   bdestroy(info->pass);
   check(info->mount != NULL, "Shoutcast: Invalid mount value");
   bdestroy(info->mount);
+
+  check(info->stream_name != NULL, "Shoutcast: Invalid name value");
+  bdestroy(info->stream_name);
+  check(info->stream_description != NULL, "Shoutcast: Invalid description value");
+  bdestroy(info->stream_description);
+  check(info->stream_genre != NULL, "Shoutcast: Invalid genre value");
+  bdestroy(info->stream_genre);
+  check(info->stream_url != NULL, "Shoutcast: Invalid url value");
+  bdestroy(info->stream_url);
+
   free(info);
   return;
  error:
@@ -108,6 +132,16 @@ void *start_shoutcast(void *_info) {
 
   check(shout_set_format(shout, info->format) == SHOUTERR_SUCCESS,
         "Shoutcast: Error setting format: %s", shout_get_error(shout));
+
+  /* Stream MetaData */
+  check(shout_set_name(shout, bdata(info->stream_name)) == SHOUTERR_SUCCESS,
+        "Shoutcast: Error setting name: %s", shout_get_error(shout));
+  check(shout_set_description(shout, bdata(info->stream_description)) == SHOUTERR_SUCCESS,
+        "Shoutcast: Error setting description: %s", shout_get_error(shout));
+  check(shout_set_genre(shout, bdata(info->stream_genre)) == SHOUTERR_SUCCESS,
+        "Shoutcast: Error setting genre: %s", shout_get_error(shout));
+  check(shout_set_url(shout, bdata(info->stream_url)) == SHOUTERR_SUCCESS,
+        "Shoutcast: Error setting url: %s", shout_get_error(shout));
 
   check(shout_open(shout) == SHOUTERR_SUCCESS,
         "Shoutcast: Error connecting: %s", shout_get_error(shout));
