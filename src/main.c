@@ -7,7 +7,7 @@
 
 #include "filereader.h"
 #include "stretcher.h"
-#include "ogg_encoder.h"
+#include "encoder_process.h"
 #include "shoutcast.h"
 #include "config.h"
 
@@ -43,12 +43,12 @@ int main (int argc, char *argv[]) {
                           fread2stretch,
                           stretch2encode);
 
-  OggEncoderInfo *ogg_encoder_info =
-    ogg_encoder_info_create(radio_config->channels,
-                            radio_config->encoder.samplerate,
-                            SF_FORMAT_OGG | SF_FORMAT_VORBIS,
-                            radio_config->encoder.usleep_time,
-                            stretch2encode, encode2stream);
+  EncoderProcessState *encoder_process_state =
+    encoder_process_state_create(radio_config->channels,
+                                 radio_config->encoder.samplerate,
+                                 SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+                                 radio_config->encoder.usleep_time,
+                                 stretch2encode, encode2stream);
 
   ShoutCastInfo *sc_info =
     shoutcast_info_create(radio_config->shoutcast.host,
@@ -77,8 +77,8 @@ int main (int argc, char *argv[]) {
   pthread_t encoder_thread = NULL;
   int rc3 = pthread_create(&encoder_thread,
                            NULL,
-                           &start_ogg_encoder,
-                           ogg_encoder_info);
+                           &start_encoder_process,
+                           encoder_process_state);
   check(!rc3, "Error creating File Reader thread");
 
   pthread_t shout_thread = NULL;

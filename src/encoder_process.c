@@ -5,7 +5,7 @@
 
 #include <sndfile.h>
 
-#include "ogg_encoder.h"
+#include "encoder_process.h"
 
 #include "virtual_ogg.h"
 #include "messages.h"
@@ -13,38 +13,38 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-OggEncoderInfo *ogg_encoder_info_create(int channels,
-                                        int samplerate,
-                                        int format,
-                                        int usleep_time,
-                                        RingBuffer *audio_in,
-                                        RingBuffer *audio_out) {
+EncoderProcessState *encoder_process_state_create(int channels,
+                                                  int samplerate,
+                                                  int format,
+                                                  int usleep_time,
+                                                  RingBuffer *msg_in,
+                                                  RingBuffer *msg_out) {
 
-  OggEncoderInfo *info = malloc(sizeof(OggEncoderInfo));
-  check_mem(info);
+  EncoderProcessState *state = malloc(sizeof(EncoderProcessState));
+  check_mem(state);
 
-  check(audio_in != NULL, "Invalid audio in buffer passed");
-  info->audio_in = audio_in;
+  check(msg_in != NULL, "Invalid msg in buffer passed");
+  state->audio_in = msg_in;
 
-  check(audio_out != NULL, "Invalid audio out buffer passed");
-  info->audio_out = audio_out;
+  check(msg_out != NULL, "Invalid msg out buffer passed");
+  state->audio_out = msg_out;
 
-  info->channels    = channels;
-  info->samplerate  = samplerate;
-  info->format      = format;
-  info->usleep_time = usleep_time;
+  state->channels    = channels;
+  state->samplerate  = samplerate;
+  state->format      = format;
+  state->usleep_time = usleep_time;
 
-  return info;
+  return state;
  error:
   return NULL;
 }
 
-void ogg_encoder_info_destroy(OggEncoderInfo *info) {
-  free(info);
+void encoder_process_state_destroy(EncoderProcessState *state) {
+  free(state);
 }
 
-void *start_ogg_encoder(void *_info) {
-  OggEncoderInfo *info = _info;
+void *start_encoder_process(void *_info) {
+  EncoderProcessState *info = _info;
 
   SF_INFO output_info;
   SF_VIRTUAL_IO *virtual_ogg = NULL;
@@ -116,7 +116,7 @@ void *start_ogg_encoder(void *_info) {
 
  error:
   log_info("Encoder: Finished");
-  if (info != NULL) ogg_encoder_info_destroy(info);
+  if (info != NULL) encoder_process_state_destroy(info);
   if (virtual_ogg != NULL) virtual_ogg_destroy(virtual_ogg);
   if (output_file != NULL) sf_close(output_file);
   log_info("Encoder: Cleaned up");

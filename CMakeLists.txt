@@ -7,7 +7,7 @@ include_directories(include)
 
 set(SOURCES
   "src/filereader.c"
-  "src/ogg_encoder.c"
+  "src/encoder_process.c"
   "src/messages.c"
   "src/stretcher.c"
   "src/shoutcast.c"
