@@ -81,15 +81,20 @@ bstring get_random_file(bstring pattern) {
   return bfromcstr("");
 }
 
-void debug_ov(OggVorbis_File *vf) {
-  char **ptr=ov_comment(vf,-1)->user_comments;
-  vorbis_info *vi=ov_info(vf,-1);
-  while(*ptr){
-    fprintf(stderr,"%s\n",*ptr);
+TrackInfo *get_track_info(OggVorbis_File *vf) {
+  char **ptr = ov_comment(vf, -1)->user_comments;
+  bstring artist;
+  bstring title;
+  while(*ptr) {
+    if (strncmp(*ptr, "ARTIST", strlen("ARTIST")) == 0) {
+      artist = bfromcstr(*ptr);
+    } else if (strncmp(*ptr, "TITLE", strlen("TITLE")) == 0) {
+      title = bfromcstr(*ptr);
+    }
     ++ptr;
   }
-  fprintf(stderr,"\nBitstream is %d channel, %ldHz\n",vi->channels,vi->rate);
-  fprintf(stderr,"Encoded by: %s\n\n",ov_comment(vf,-1)->vendor);
+  TrackInfo *track_info = track_info_create(artist, title);
+  return track_info;
 }
 
 int ov_channels(OggVorbis_File *vf) {
@@ -107,6 +112,7 @@ void *start_filereader(void *_info) {
   AudioBuffer *out_audio = NULL;
   Message *out_message = NULL;
   long read_amount = 0;
+  TrackInfo *track_info = NULL;
 
   srand(time(NULL));
 
@@ -140,7 +146,6 @@ void *start_filereader(void *_info) {
       check_mem(vf);
 
       int ovopen_err = ov_fopen(bdata(newfile), vf);
-      log_info("done");
       if (ovopen_err) {
         log_err("FileReader: Could not open input file. Trying another");
         opened = false;
@@ -156,8 +161,11 @@ void *start_filereader(void *_info) {
         continue;
       }
       opened = true;
-      log_info("Debugging file");
-      debug_ov(vf);
+      track_info = get_track_info(vf);
+      out_message = new_track_message(track_info);
+      check(out_message != NULL,
+            "FileReader: Could not create track info message");
+      rb_push(info->audio_out, out_message);
       bdestroy(newfile);
 
     } else if (!rb_full(info->audio_out)) {
