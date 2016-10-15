@@ -7,7 +7,8 @@
 
 #include "encoder_process.h"
 
-#include "virtual_ogg.h"
+#include "ogg_encoder.h"
+#include "filechunk.h"
 #include "messages.h"
 
 #include "bclib/dbg.h"
@@ -46,24 +47,13 @@ void encoder_process_state_destroy(EncoderProcessState *state) {
 void *start_encoder_process(void *_info) {
   EncoderProcessState *info = _info;
 
-  SF_INFO output_info;
-  SF_VIRTUAL_IO *virtual_ogg = NULL;
-  SNDFILE *output_file = NULL;
+  Message *input_msg      = NULL;
+  AudioArray *input_audio = NULL;
+  OggEncoderState *encoder = NULL;
+  FileChunk *audio_data    = NULL;
+  Message *audio_msg       = NULL;
 
   check(info != NULL, "Encoder: Invalid info data passed");
-
-  output_info.samplerate = info->samplerate;
-  output_info.channels = info->channels;
-  output_info.format = info->format;
-
-  virtual_ogg = virtual_ogg_create();
-  check(virtual_ogg != NULL, "Encoder: Could not create virtual ogg");
-  output_file = sf_open_virtual(virtual_ogg,
-                                SFM_WRITE,
-                                &output_info,
-                                info->audio_out);
-  check(output_file != NULL,
-        "Encoder: Could not open output file: %s", sf_strerror(output_file));
 
   int startup_wait = 1;
   while (true) {
@@ -76,8 +66,16 @@ void *start_encoder_process(void *_info) {
     }
   }
 
-  Message *input_msg      = NULL;
-  AudioArray *input_audio = NULL;
+  float quality = 0.5;
+  encoder = ogg_encoder_state(info->channels, info->samplerate, quality);
+  set_headers(encoder);
+  FileChunk *headers = file_chunk_create();
+  check(headers != NULL, "Could not create headers file chunk");
+  write_headers(encoder, headers);
+  Message *header_msg = file_chunk_message(headers);
+  check(header_msg != NULL, "Could not create headers message");
+
+  rb_push(info->audio_out, header_msg);
 
   log_info("Encoder: Starting");
   while (true) {
@@ -89,10 +87,24 @@ void *start_encoder_process(void *_info) {
         message_destroy(input_msg);
         break;
       } else if (input_msg->type == AUDIOARRAY) {
+
         input_audio = input_msg->payload;
-        sf_writef_float(output_file,
-                        input_audio->audio,
-                        input_audio->per_channel_length);
+        add_audio(encoder,
+                  input_audio->channels,
+                  input_audio->per_channel_length,
+                  input_audio->audio);
+
+        audio_data = file_chunk_create();
+        write_audio(encoder, audio_data);
+        if (audio_data->data == NULL) {
+          free(audio_data);
+        } else {
+          check(audio_data->data != NULL, "Not extended audio data");
+          audio_msg = file_chunk_message(audio_data);
+          check(audio_msg != NULL, "Could not create audio message");
+          rb_push(info->audio_out, audio_msg);
+        }
+
         message_destroy(input_msg);
       } else {
         log_err("Encoder: Received invalid message of type %d", input_msg->type);
@@ -117,8 +129,7 @@ void *start_encoder_process(void *_info) {
  error:
   log_info("Encoder: Finished");
   if (info != NULL) encoder_process_state_destroy(info);
-  if (virtual_ogg != NULL) virtual_ogg_destroy(virtual_ogg);
-  if (output_file != NULL) sf_close(output_file);
+
   log_info("Encoder: Cleaned up");
   pthread_exit(NULL);
   return NULL;

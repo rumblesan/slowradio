@@ -7,8 +7,6 @@
 
 #include "bclib/dbg.h"
 
-#define READ 1024
-
 OggEncoderState *ogg_encoder_state(long channels, long samplerate, float quality) {
   OggEncoderState *encoder = malloc(sizeof(OggEncoderState));
   check_mem(encoder);
@@ -64,13 +62,16 @@ int write_headers(OggEncoderState *encoder, FileChunk *chunk) {
   return 0;
 }
 
-int add_audio(OggEncoderState *encoder, long channels, long samplespc, float **audio) {
+int add_audio(OggEncoderState *encoder, long channels, long samplespc, float *audio) {
   if (samplespc == 0) {
     return vorbis_analysis_wrote(&(encoder->vd), 0);
   } else {
-    float **buffer = vorbis_analysis_buffer(&(encoder->vd), READ);
+    float **buffer = vorbis_analysis_buffer(&(encoder->vd), samplespc);
     for (int c = 0; c < channels; c += 1) {
-      memcpy(buffer[c], audio[c], samplespc * sizeof(float));
+      for (int s = 0; s < samplespc; s += 1) {
+        int pos = (s * channels) + c;
+        buffer[c][s] = audio[pos];
+      }
     }
     return vorbis_analysis_wrote(&(encoder->vd), samplespc);
   }
@@ -100,10 +101,10 @@ int write_audio(OggEncoderState *encoder, FileChunk *chunk) {
 
       while(!finished) {
         int result = ogg_stream_pageout(&(encoder->os), &new_page);
-
         if(result == 0) break;
         file_chunk_extend(chunk, new_page.header, new_page.header_len);
         file_chunk_extend(chunk, new_page.body, new_page.body_len);
+        check(chunk->data != NULL, "Encoder error");
 
         /* this could be set above, but for illustrative purposes, I do
            it here (to show that vorbis does know where the stream ends) */
@@ -118,6 +119,8 @@ int write_audio(OggEncoderState *encoder, FileChunk *chunk) {
   }
 
   return finished;
+ error:
+  return 0;
 }
 
 void cleanup_encoder(OggEncoderState *encoder) {
