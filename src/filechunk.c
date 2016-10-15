@@ -14,19 +14,22 @@ FileChunk *file_chunk_create() {
 }
 
 FileChunk *file_chunk_extend(FileChunk *chunk, unsigned char *addition, int addlength) {
+  unsigned char *new_data = NULL;
   if (chunk->length == 0) {
-    chunk->data = malloc(addlength * sizeof(unsigned char));
-    check_mem(chunk->data);
+    new_data = malloc(addlength * sizeof(unsigned char));
+    check_mem(new_data);
+    chunk->data = new_data;
 
     memcpy(chunk->data, addition, addlength * sizeof(unsigned char));
     chunk->length = addlength;
   } else {
     int old_length = chunk->length;
     int new_length = old_length + addlength;
-    chunk->data = realloc(chunk->data, new_length * sizeof(unsigned char));
-    check_mem(chunk->data);
+    unsigned char *new_data = realloc(chunk->data, new_length * sizeof(unsigned char));
+    check_mem(new_data);
+    chunk->data = new_data;
 
-    memcpy(chunk->data[old_length], addition, addlength * sizeof(unsigned char));
+    memcpy(&(chunk->data[old_length]), addition, addlength * sizeof(unsigned char));
     chunk->length = new_length;
   }
   return chunk;
