@@ -5,9 +5,9 @@
 
 typedef struct EncoderProcessState {
 
-  RingBuffer *audio_in;
+  RingBuffer *pipe_in;
 
-  RingBuffer *audio_out;
+  RingBuffer *pipe_out;
 
   int channels;
   int samplerate;
@@ -20,8 +20,8 @@ EncoderProcessState *encoder_process_state_create(int channels,
                                                   int samplerate,
                                                   int format,
                                                   int usleep_time,
-                                                  RingBuffer *audio_in,
-                                                  RingBuffer *audio_out);
+                                                  RingBuffer *pipe_in,
+                                                  RingBuffer *pipe_out);
 
 void encoder_process_state_destroy(EncoderProcessState *state);
 

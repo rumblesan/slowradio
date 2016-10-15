@@ -23,10 +23,10 @@ EncoderProcessState *encoder_process_state_create(int channels,
   check_mem(state);
 
   check(msg_in != NULL, "Invalid msg in buffer passed");
-  state->audio_in = msg_in;
+  state->pipe_in = msg_in;
 
   check(msg_out != NULL, "Invalid msg out buffer passed");
-  state->audio_out = msg_out;
+  state->pipe_out = msg_out;
 
   state->channels    = channels;
   state->samplerate  = samplerate;
@@ -49,13 +49,13 @@ void *start_encoder_process(void *_info) {
   AudioArray *input_audio = NULL;
   OggEncoderState *encoder = NULL;
   FileChunk *audio_data    = NULL;
-  Message *audio_msg       = NULL;
+  Message *output_msg      = NULL;
 
   check(info != NULL, "Encoder: Invalid info data passed");
 
   int startup_wait = 1;
   while (true) {
-    if (!rb_empty(info->audio_in)) {
+    if (!rb_empty(info->pipe_in)) {
       log_info("Encoder: Audio available");
       break;
     } else {
@@ -73,12 +73,12 @@ void *start_encoder_process(void *_info) {
   Message *header_msg = file_chunk_message(headers);
   check(header_msg != NULL, "Could not create headers message");
 
-  rb_push(info->audio_out, header_msg);
+  rb_push(info->pipe_out, header_msg);
 
   log_info("Encoder: Starting");
   while (true) {
-    if (!rb_full(info->audio_out) && !rb_empty(info->audio_in)) {
-      input_msg = rb_pop(info->audio_in);
+    if (!rb_full(info->pipe_out) && !rb_empty(info->pipe_in)) {
+      input_msg = rb_pop(info->pipe_in);
       check(input_msg != NULL, "Encoder: Could not get audio from audio in");
       if (input_msg->type == FINISHED) {
         log_info("Encoder: Finished message received");
@@ -98,9 +98,9 @@ void *start_encoder_process(void *_info) {
           free(audio_data);
         } else {
           check(audio_data->data != NULL, "Not extended audio data");
-          audio_msg = file_chunk_message(audio_data);
-          check(audio_msg != NULL, "Could not create audio message");
-          rb_push(info->audio_out, audio_msg);
+          output_msg = file_chunk_message(audio_data);
+          check(output_msg != NULL, "Could not create audio message");
+          rb_push(info->pipe_out, output_msg);
         }
 
         message_destroy(input_msg);
@@ -115,8 +115,8 @@ void *start_encoder_process(void *_info) {
   }
 
   while (true) {
-    if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, finished_message());
+    if (!rb_full(info->pipe_out)) {
+      rb_push(info->pipe_out, finished_message());
       break;
     } else {
       sched_yield();
