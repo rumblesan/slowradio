@@ -48,11 +48,10 @@ void *start_stretcher(void *_info) {
 
   Stretch *stretch = stretch_create(info->channels, info->window, info->stretch);
   Message *input_msg = NULL;
-  AudioArray *input_audio = NULL;
+  AudioBuffer *input_audio = NULL;
   AudioBuffer *windowed = NULL;
   AudioBuffer *stretched = NULL;
-  float *floats = NULL;
-  Message *output_audio = NULL;
+  Message *output_msg = NULL;
 
   int startup_wait = 1;
   while (true) {
@@ -75,13 +74,12 @@ void *start_stretcher(void *_info) {
         message_destroy(input_msg);
         input_msg = NULL;
         break;
-      } else if (input_msg->type == AUDIOARRAY) {
+      } else if (input_msg->type == AUDIOBUFFER) {
         input_audio = input_msg->payload;
-        stretch_load_floats(stretch,
-                            input_audio->audio,
-                            input_audio->channels,
-                            input_audio->per_channel_length);
-        message_destroy(input_msg);
+        stretch_load_samples(stretch, input_audio);
+        // TODO freeing not destroying message as audio buffer
+        // is destroyed inside stretch. Needs to be better
+        free(input_msg);
         input_msg = NULL;
       } else {
         log_err("Stretcher: Received invalid message of type %d", input_msg->type);
@@ -95,26 +93,14 @@ void *start_stretcher(void *_info) {
       fft_run(stretch->fft, windowed);
       stretched = stretch_output(stretch, windowed);
       check(stretched != NULL, "Stretcher: Could not get stretched audio");
-      windowed = NULL;
 
-      int buffer_size = stretched->channels * stretched->size;
-      floats = malloc(buffer_size * sizeof(float)); /*  */
-      check_mem(floats);
-      for (int i = 0; i < stretched->channels; i++) {
-        for (int j = 0; j < stretched->size; j++) {
-          int pos = (j * stretched->channels) + i;
-          floats[pos] = stretched->buffers[i][j];
-        }
-      }
-      output_audio = audio_array_message(floats, stretched->channels, buffer_size);
-      check(output_audio != NULL, "Stretcher: Output message issue");
+      output_msg = audio_buffer_message(stretched);
+      check(output_msg != NULL, "Stretcher: Output message issue");
 
-      audio_buffer_destroy(stretched);
+      rb_push(info->audio_out, output_msg);
+      output_msg = NULL;
       stretched = NULL;
-
-      floats = NULL;
-      rb_push(info->audio_out, output_audio);
-      output_audio = NULL;
+      windowed = NULL;
     } else {
       sched_yield();
       usleep(info->usleep_amount);
@@ -136,8 +122,7 @@ void *start_stretcher(void *_info) {
   if (input_msg != NULL) message_destroy(input_msg);
   if (windowed != NULL) audio_buffer_destroy(windowed);
   if (stretched != NULL) audio_buffer_destroy(stretched);
-  if (floats != NULL) free(floats);
-  if (output_audio != NULL) message_destroy(output_audio);
+  if (output_msg != NULL) message_destroy(output_msg);
   if (stretch != NULL) stretch_destroy(stretch);
   if (info != NULL) stretcher_info_destroy(info);
   log_info("Stretcher: Cleaned up");

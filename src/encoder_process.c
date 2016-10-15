@@ -45,8 +45,8 @@ void encoder_process_state_destroy(EncoderProcessState *state) {
 void *start_encoder_process(void *_info) {
   EncoderProcessState *info = _info;
 
-  Message *input_msg      = NULL;
-  AudioArray *input_audio = NULL;
+  Message *input_msg       = NULL;
+  AudioBuffer *input_audio = NULL;
   OggEncoderState *encoder = NULL;
   FileChunk *audio_data    = NULL;
   Message *output_msg      = NULL;
@@ -84,13 +84,10 @@ void *start_encoder_process(void *_info) {
         log_info("Encoder: Finished message received");
         message_destroy(input_msg);
         break;
-      } else if (input_msg->type == AUDIOARRAY) {
+      } else if (input_msg->type == AUDIOBUFFER) {
 
         input_audio = input_msg->payload;
-        add_audio(encoder,
-                  input_audio->channels,
-                  input_audio->per_channel_length,
-                  input_audio->audio);
+        add_audio(encoder, input_audio);
 
         audio_data = file_chunk_create();
         write_audio(encoder, audio_data);

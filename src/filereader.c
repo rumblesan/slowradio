@@ -104,7 +104,7 @@ void *start_filereader(void *_info) {
   bool opened = false;
 
   float **oggiob = NULL;
-  float *out_audio = NULL;
+  AudioBuffer *out_audio = NULL;
   Message *out_message = NULL;
   long read_amount = 0;
 
@@ -114,14 +114,15 @@ void *start_filereader(void *_info) {
 
   int size = info->read_size;
   int channels = info->channels;
-  int buffer_size = size * channels;
+  int pc_size = size / channels;
+  int pc_read = 0;
 
-  oggiob = malloc(2 * sizeof(float *));
+  oggiob = malloc(channels * sizeof(float *));
   check_mem(oggiob);
-  oggiob[0] = malloc(buffer_size * sizeof(float));
-  check_mem(oggiob[0]);
-  oggiob[1] = malloc(buffer_size * sizeof(float));
-  check_mem(oggiob[1]);
+  for (int c = 0; c < channels; c += 1) {
+    oggiob[c] = malloc(pc_size * sizeof(float));
+    check_mem(oggiob[c]);
+  }
 
   log_info("FileReader: Starting");
   int current_section;
@@ -162,29 +163,25 @@ void *start_filereader(void *_info) {
     } else if (!rb_full(info->audio_out)) {
 
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
+
       if (read_amount == 0) {
         ov_clear(vf);
         opened = false;
         continue;
       }
 
-      out_audio = malloc(channels * read_amount * sizeof(float));
-      check_mem(out_audio);
-
+      pc_read = read_amount / channels;
+      out_audio = audio_buffer_create(channels, pc_read);
+      check(out_audio != NULL, "FileReader: Could not create Audio Buffer");
       for (int c = 0; c < channels; c += 1) {
-        for (int s = 0; s < read_amount; s += 1) {
-          int pos = (s * channels) + c;
-          out_audio[pos] = oggiob[c][s];
-        }
+        memcpy(out_audio->buffers[c], oggiob[c], pc_read * sizeof(float));
       }
-
-      out_message = audio_array_message(out_audio, channels, read_amount);
-      out_audio = NULL;
-
+      out_message = audio_buffer_message(out_audio);
       check(out_message != NULL,
             "FileReader: Could not create audio array message");
       rb_push(info->audio_out, out_message);
       out_message = NULL;
+      out_audio = NULL;
 
     } else {
       sched_yield();

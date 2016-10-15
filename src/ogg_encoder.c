@@ -4,6 +4,7 @@
 
 #include "ogg_encoder.h"
 #include "filechunk.h"
+#include "pstretch/audiobuffer.h"
 
 #include "bclib/dbg.h"
 
@@ -62,18 +63,16 @@ int write_headers(OggEncoderState *encoder, FileChunk *chunk) {
   return 0;
 }
 
-int add_audio(OggEncoderState *encoder, long channels, long samplespc, float *audio) {
-  if (samplespc == 0) {
+int add_audio(OggEncoderState *encoder, AudioBuffer *audio) {
+  if (audio->size == 0) {
     return vorbis_analysis_wrote(&(encoder->vd), 0);
   } else {
-    float **buffer = vorbis_analysis_buffer(&(encoder->vd), samplespc);
-    for (int c = 0; c < channels; c += 1) {
-      for (int s = 0; s < samplespc; s += 1) {
-        int pos = (s * channels) + c;
-        buffer[c][s] = audio[pos];
-      }
+    float **buffer = vorbis_analysis_buffer(&(encoder->vd), audio->size);
+
+    for (int c = 0; c < audio->channels; c += 1) {
+      memcpy(buffer[c], audio->buffers[c], audio->size * sizeof(float));
     }
-    return vorbis_analysis_wrote(&(encoder->vd), samplespc);
+    return vorbis_analysis_wrote(&(encoder->vd), audio->size);
   }
 }
 
