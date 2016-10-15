@@ -9,6 +9,7 @@ set(SOURCES
   "src/filereader.c"
   "src/encoder_process.c"
   "src/messages.c"
+  "src/filechunk.c"
   "src/stretcher.c"
   "src/shoutcast.c"
   "src/virtual_ogg.c"

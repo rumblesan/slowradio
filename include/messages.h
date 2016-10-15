@@ -1,6 +1,8 @@
 #ifndef __SLOW_RADIO_MESSAGES__
 #define __SLOW_RADIO_MESSAGES__
 
+#include "filechunk.h"
+
 typedef enum {AUDIOARRAY, FILECHUNK, FINISHED} MessageType;
 
 typedef struct Message {
@@ -24,17 +26,7 @@ AudioArray *audio_array_create(float *data, int channels, int total_length);
 
 void audio_array_destroy(AudioArray *audio);
 
-
-typedef struct FileChunk {
-  unsigned char *data;
-  int length;
-} FileChunk;
-
-FileChunk *file_chunk_create(unsigned char *data, int length);
-
-void file_chunk_destroy(FileChunk *chunk);
-
-Message *file_chunk_message(unsigned char *data, int length);
+Message *file_chunk_message(FileChunk *chunk);
 Message *audio_array_message(float *data, int channels, int total_length);
 Message *finished_message();
 
