@@ -3,8 +3,6 @@
 #include <unistd.h>
 #include <stdbool.h>
 
-#include <sndfile.h>
-
 #include "encoder_process.h"
 
 #include "ogg_encoder.h"

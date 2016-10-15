@@ -7,8 +7,11 @@ A slow radio station
 
 Third-party libraries
 * libshout
-* libsndfile
 * libconfig
+* libvorbis
+* libvorbisfile
+* libvorbisenc
+* libogg
 
 My own libraries
 * bclib
