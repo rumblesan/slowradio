@@ -13,7 +13,6 @@
 #include "vorbis/vorbisfile.h"
 
 #include "filereader.h"
-#include "virtual_ogg.h"
 #include "messages.h"
 
 #include "bclib/dbg.h"
