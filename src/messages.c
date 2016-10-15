@@ -5,6 +5,7 @@
 
 #include "pstretch/audiobuffer.h"
 
+#include "bclib/bstrlib.h"
 #include "bclib/dbg.h"
 
 
@@ -26,12 +27,41 @@ Message *audio_buffer_message(AudioBuffer *buffer) {
   return NULL;
 }
 
+Message *new_track_message(TrackInfo *info) {
+  check(info != NULL, "Could not create track info");
+  Message *message = message_create(NEWTRACK, info);
+  check(message != NULL, "Could not create message");
+  return message;
+ error:
+  return NULL;
+}
+
 Message *finished_message() {
   Message *message = message_create(FINISHED, NULL);
   check(message != NULL, "Could not create message");
   return message;
  error:
   return NULL;
+}
+
+TrackInfo *track_info_create(bstring artist, bstring title) {
+  TrackInfo *info = malloc(sizeof(TrackInfo));
+  check_mem(info);
+  info->artist = artist;
+  info->title  = title;
+  return info;
+ error:
+  return NULL;
+}
+void track_info_destroy(TrackInfo *info) {
+  check(info->artist != NULL, "Invalid artist");
+  check(info->title != NULL, "Invalid artist");
+  bdestroy(info->artist);
+  bdestroy(info->title);
+  free(info);
+  return;
+ error:
+  return;
 }
 
 Message *message_create(MessageType type, void *payload) {
@@ -52,6 +82,7 @@ void message_destroy(Message *message) {
   switch (message->type) {
   case AUDIOBUFFER: audio_buffer_destroy(message->payload); break;
   case FILECHUNK: file_chunk_destroy(message->payload); break;
+  case NEWTRACK: track_info_destroy(message->payload); break;
   case FINISHED: log_info("Nothing to destroy for finish message"); break;
   }
   free(message);
