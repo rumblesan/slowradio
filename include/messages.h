@@ -3,7 +3,9 @@
 
 #include "filechunk.h"
 
-typedef enum {AUDIOARRAY, FILECHUNK, FINISHED} MessageType;
+#include "pstretch/audiobuffer.h"
+
+typedef enum {AUDIOBUFFER, FILECHUNK, FINISHED} MessageType;
 
 typedef struct Message {
   MessageType type;
@@ -14,20 +16,8 @@ Message *message_create(MessageType type, void *payload);
 
 void message_destroy(Message *message);
 
-
-typedef struct AudioArray {
-  float *audio;
-  int channels;
-  int total_length;
-  int per_channel_length;
-} AudioArray;
-
-AudioArray *audio_array_create(float *data, int channels, int total_length);
-
-void audio_array_destroy(AudioArray *audio);
-
-Message *file_chunk_message(FileChunk *chunk);
-Message *audio_array_message(float *data, int channels, int total_length);
+Message *file_chunk_message(FileChunk *chunk); /*  */
+Message *audio_buffer_message(AudioBuffer *buffer);
 Message *finished_message();
 
 #endif
