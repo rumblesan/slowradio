@@ -10,7 +10,8 @@ typedef enum {
   AUDIOBUFFER,
   FILECHUNK,
   NEWTRACK,
-  FINISHED
+  TRACKFINISHED,
+  STREAMFINISHED
 } MessageType;
 
 typedef struct TrackInfo {
@@ -33,6 +34,9 @@ void track_info_destroy(TrackInfo *info);
 Message *file_chunk_message(FileChunk *chunk); /*  */
 Message *audio_buffer_message(AudioBuffer *buffer);
 Message *new_track_message(TrackInfo *info);
-Message *finished_message();
+Message *track_finished_message();
+Message *stream_finished_message();
+
+const char *msg_type(Message *message);
 
 #endif

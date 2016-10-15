@@ -36,8 +36,15 @@ Message *new_track_message(TrackInfo *info) {
   return NULL;
 }
 
-Message *finished_message() {
-  Message *message = message_create(FINISHED, NULL);
+Message *track_finished_message() {
+  Message *message = message_create(TRACKFINISHED, NULL);
+  check(message != NULL, "Could not create message");
+  return message;
+ error:
+  return NULL;
+}
+Message *stream_finished_message() {
+  Message *message = message_create(STREAMFINISHED, NULL);
   check(message != NULL, "Could not create message");
   return message;
  error:
@@ -83,9 +90,23 @@ void message_destroy(Message *message) {
   case AUDIOBUFFER: audio_buffer_destroy(message->payload); break;
   case FILECHUNK: file_chunk_destroy(message->payload); break;
   case NEWTRACK: track_info_destroy(message->payload); break;
-  case FINISHED: log_info("Nothing to destroy for finish message"); break;
+  case TRACKFINISHED: break;
+  case STREAMFINISHED: break;
   }
   free(message);
  error:
   return;
+}
+
+const char *msg_type(Message *message) {
+  check(message != NULL, "Invalid message");
+  switch (message->type) {
+  case AUDIOBUFFER: return "AudioBuffer";
+  case FILECHUNK: return "FileChunk";
+  case NEWTRACK: return "NewTrack";
+  case TRACKFINISHED: return "TrackFinished";
+  case STREAMFINISHED: return "StreamFinished";
+  }
+ error:
+  return "Invalid Message";
 }
