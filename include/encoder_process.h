@@ -3,6 +3,13 @@
 
 #include "bclib/ringbuffer.h"
 
+typedef enum {
+  WAITINGFORFILE,
+  ENCODINGFILE,
+  CLOSINGSTREAM,
+  ENCODERERROR,
+} EncoderState;
+
 typedef struct EncoderProcessState {
 
   RingBuffer *pipe_in;
