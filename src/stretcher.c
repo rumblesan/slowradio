@@ -66,11 +66,11 @@ void *start_stretcher(void *_info) {
 
   log_info("Stretcher: Starting");
   while (true) {
-    if (stretch->need_more_audio && !rb_empty(info->audio_in)) {
+    if (stretch->need_more_audio && !rb_empty(info->audio_in) && !rb_full(info->audio_out)) {
       input_msg = rb_pop(info->audio_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
-      if (input_msg->type == FINISHED) {
-        log_info("Stretcher: Finished message received");
+      if (input_msg->type == STREAMFINISHED) {
+        log_info("Stretcher: Stream Finished message received");
         message_destroy(input_msg);
         input_msg = NULL;
         break;
@@ -81,6 +81,12 @@ void *start_stretcher(void *_info) {
         // is destroyed inside stretch. Needs to be better
         free(input_msg);
         input_msg = NULL;
+      } else if (
+                 input_msg->type == NEWTRACK ||
+                 input_msg->type == TRACKFINISHED
+                 ) {
+        log_info("Passing message through");
+        rb_push(info->audio_out, input_msg);
       } else {
         log_err("Stretcher: Received invalid message of type %d", input_msg->type);
         message_destroy(input_msg);
@@ -109,7 +115,7 @@ void *start_stretcher(void *_info) {
 
   while (true) {
     if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, finished_message());
+      rb_push(info->audio_out, stream_finished_message());
       break;
     } else {
       sched_yield();
