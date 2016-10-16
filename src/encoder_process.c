@@ -53,7 +53,8 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
     log_info("Encoder: New Track received");
 
     log_info("Encoder: Creating new encoder");
-    (*encoder) = *(ogg_encoder_state(info->channels, info->samplerate, quality));
+    OggEncoderState *new_encoder = ogg_encoder_state(info->channels, info->samplerate, quality);
+    (*encoder) = *(new_encoder);
 
     TrackInfo *tinfo = input_msg->payload;
     check(tinfo != NULL, "Could not get track info from message");
