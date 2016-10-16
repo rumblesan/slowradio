@@ -153,7 +153,7 @@ void *start_shoutcast(void *_info) {
   while (true) {
     input_msg = rb_pop(info->audio);
     check(input_msg != NULL, "Shoutcast: Could not get input message");
-    if (input_msg->type == FINISHED) {
+    if (input_msg->type == STREAMFINISHED) {
       log_info("Shoutcast: Finished message received");
       message_destroy(input_msg);
       break;
