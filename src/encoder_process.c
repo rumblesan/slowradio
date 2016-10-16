@@ -58,9 +58,7 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
     TrackInfo *tinfo = input_msg->payload;
     check(tinfo != NULL, "Could not get track info from message");
 
-    // TODO setting metadata should be part of setting headers
-    log_info("New Track: %s - %s", bdata(tinfo->artist), bdata(tinfo->title));
-    set_headers(encoder);
+    set_metadata(encoder, tinfo);
 
     FileChunk *headers = file_chunk_create();
     check(headers != NULL, "Could not create headers file chunk");

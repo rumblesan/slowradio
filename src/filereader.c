@@ -87,9 +87,9 @@ TrackInfo *get_track_info(OggVorbis_File *vf) {
   bstring title;
   while(*ptr) {
     if (strncmp(*ptr, "ARTIST", strlen("ARTIST")) == 0) {
-      artist = bfromcstr(*ptr);
+      artist = bfromcstr( (*ptr + strlen("ARTIST=")) );
     } else if (strncmp(*ptr, "TITLE", strlen("TITLE")) == 0) {
-      title = bfromcstr(*ptr);
+      title = bfromcstr( (*ptr + strlen("TITLE=")) );
     }
     ++ptr;
   }

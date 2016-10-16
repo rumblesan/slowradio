@@ -5,6 +5,7 @@
 
 #include "pstretch/audiobuffer.h"
 #include "filechunk.h"
+#include "messages.h"
 
 typedef struct OggEncoderState {
 
@@ -22,6 +23,8 @@ typedef struct OggEncoderState {
 OggEncoderState *ogg_encoder_state(long channels, long samplerate, float quality);
 
 void cleanup_encoder(OggEncoderState *encoder);
+
+void set_metadata(OggEncoderState *encoder, TrackInfo *info);
 
 void set_headers(OggEncoderState *encoder);
 

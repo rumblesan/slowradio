@@ -4,6 +4,7 @@
 
 #include "ogg_encoder.h"
 #include "filechunk.h"
+#include "messages.h"
 #include "pstretch/audiobuffer.h"
 
 #include "bclib/dbg.h"
@@ -26,10 +27,10 @@ OggEncoderState *ogg_encoder_state(long channels, long samplerate, float quality
   return NULL;
 }
 
-void set_headers(OggEncoderState *encoder) {
-  vorbis_comment_add_tag(&(encoder->vc), "ENCODER", "encoder_example.c");
-  vorbis_comment_add_tag(&(encoder->vc), "ARTIST", "Rumblesan");
-  vorbis_comment_add_tag(&(encoder->vc), "TITLE", "More Efficient");
+void set_metadata(OggEncoderState *encoder, TrackInfo *info) {
+  vorbis_comment_add_tag(&(encoder->vc), "ENCODER", "Slow Radio - LibVorbis");
+  vorbis_comment_add_tag(&(encoder->vc), "ARTIST", bdata(info->artist));
+  vorbis_comment_add_tag(&(encoder->vc), "TITLE", bdata(info->title));
 }
 
 int write_headers(OggEncoderState *encoder, FileChunk *chunk) {
