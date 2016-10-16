@@ -7,5 +7,6 @@
 
 bool wait_for_input(RingBuffer *rb, long pause, long maxtime);
 
+bool pipes_ready(RingBuffer *rb_in, RingBuffer *rb_out);
 
 #endif

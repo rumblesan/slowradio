@@ -3,7 +3,6 @@
 
 #include "bclib/ringbuffer.h"
 
-
 bool wait_for_input(RingBuffer *rb, long pause, long maxtime) {
   int maxloops = maxtime / pause;
   int loops    = 0;
@@ -17,4 +16,8 @@ bool wait_for_input(RingBuffer *rb, long pause, long maxtime) {
     if (loops >= maxloops) return false;
   }
   return true;
+}
+
+bool pipes_ready(RingBuffer *rb_in, RingBuffer *rb_out) {
+  return (!rb_full(rb_out) && !rb_empty(rb_in));
 }
