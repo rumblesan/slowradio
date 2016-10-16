@@ -173,6 +173,7 @@ void *start_filereader(void *_info) {
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
 
       if (read_amount == 0) {
+        rb_push(info->audio_out, track_finished_message());
         ov_clear(vf);
         opened = false;
         continue;
@@ -199,7 +200,7 @@ void *start_filereader(void *_info) {
 
   while (true) {
     if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, finished_message());
+      rb_push(info->audio_out, stream_finished_message());
       break;
     } else {
       sched_yield();
