@@ -15,6 +15,7 @@ set(SOURCES
   "src/shoutcast.c"
   "src/config.c"
   "src/main.c"
+  "src/util.c"
   )
 
 add_executable(slow ${SOURCES})
