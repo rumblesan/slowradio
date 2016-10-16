@@ -29,6 +29,8 @@ int write_headers(OggEncoderState *encoder, FileChunk *chunk);
 
 int add_audio(OggEncoderState *encoder, AudioBuffer *audio);
 
+int file_finished(OggEncoderState *encoder);
+
 int write_audio(OggEncoderState *encoder, FileChunk *chunk);
 
 #endif

@@ -63,17 +63,23 @@ int write_headers(OggEncoderState *encoder, FileChunk *chunk) {
   return 0;
 }
 
+int file_finished(OggEncoderState *encoder) {
+  return vorbis_analysis_wrote(&(encoder->vd), 0);
+}
+
 int add_audio(OggEncoderState *encoder, AudioBuffer *audio) {
   if (audio->size == 0) {
     return vorbis_analysis_wrote(&(encoder->vd), 0);
   } else {
+    check(encoder != NULL, "Invalid encoder");
     float **buffer = vorbis_analysis_buffer(&(encoder->vd), audio->size);
-
     for (int c = 0; c < audio->channels; c += 1) {
       memcpy(buffer[c], audio->buffers[c], audio->size * sizeof(float));
     }
     return vorbis_analysis_wrote(&(encoder->vd), audio->size);
   }
+ error:
+  return -1;
 }
 
 int write_audio(OggEncoderState *encoder, FileChunk *chunk) {
