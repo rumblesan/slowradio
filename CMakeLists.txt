@@ -32,6 +32,7 @@ target_link_libraries(slow pstretch)
 
 target_link_libraries(slow config)
 target_link_libraries(slow vorbis vorbisfile ogg vorbisenc)
+target_link_libraries(slow pthread)
 
 #option (WITH_TESTS "build tests" ON)
 
