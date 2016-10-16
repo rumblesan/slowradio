@@ -61,7 +61,9 @@ RadioConfig *read_config(char *config_path) {
                                              &(radio_config->encoder.samplerate));
   int encsleep = config_setting_lookup_int(encsetting, "usleep_time",
                                            &(radio_config->encoder.usleep_time));
-  check(encsamplerate && encsleep,
+  int encquality = config_setting_lookup_float(encsetting, "quality",
+                                               &(radio_config->encoder.quality));
+  check(encsamplerate && encsleep && encquality,
         "%s:%d - %s", config_error_file(cfg),
         config_error_line(cfg), config_error_text(cfg));
 

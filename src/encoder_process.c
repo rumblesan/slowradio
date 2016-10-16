@@ -17,6 +17,7 @@
 EncoderProcessState *encoder_process_state_create(int channels,
                                                   int samplerate,
                                                   int format,
+                                                  double quality,
                                                   int usleep_time,
                                                   RingBuffer *pipe_in,
                                                   RingBuffer *pipe_out) {
@@ -33,6 +34,7 @@ EncoderProcessState *encoder_process_state_create(int channels,
   state->channels    = channels;
   state->samplerate  = samplerate;
   state->format      = format;
+  state->quality     = quality;
   state->usleep_time = usleep_time;
 
   return state;
@@ -46,14 +48,11 @@ void encoder_process_state_destroy(EncoderProcessState *state) {
 
 EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *encoder, Message *input_msg) {
 
-  // TODO move this into info
-  float quality       = 0.5;
-
   if (input_msg->type == NEWTRACK) {
     log_info("Encoder: New Track received");
 
     log_info("Encoder: Creating new encoder");
-    OggEncoderState *new_encoder = ogg_encoder_state(info->channels, info->samplerate, quality);
+    OggEncoderState *new_encoder = ogg_encoder_state(info->channels, info->samplerate, info->quality);
     (*encoder) = *(new_encoder);
 
     TrackInfo *tinfo = input_msg->payload;

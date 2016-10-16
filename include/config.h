@@ -18,6 +18,7 @@ typedef struct StretcherConfig {
 typedef struct EncoderConfig {
   int samplerate;
   int usleep_time;
+  double quality;
 } EncoderConfig;
 
 typedef struct ShoutcastConfig {

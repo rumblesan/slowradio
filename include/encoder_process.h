@@ -20,12 +20,14 @@ typedef struct EncoderProcessState {
   int samplerate;
   int format;
   int usleep_time;
+  double quality;
 
 } EncoderProcessState;
 
 EncoderProcessState *encoder_process_state_create(int channels,
                                                   int samplerate,
                                                   int format,
+                                                  double quality,
                                                   int usleep_time,
                                                   RingBuffer *pipe_in,
                                                   RingBuffer *pipe_out);

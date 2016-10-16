@@ -47,6 +47,7 @@ int main (int argc, char *argv[]) {
     encoder_process_state_create(radio_config->channels,
                                  radio_config->encoder.samplerate,
                                  SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+                                 radio_config->encoder.quality,
                                  radio_config->encoder.usleep_time,
                                  stretch2encode, encode2stream);
 
