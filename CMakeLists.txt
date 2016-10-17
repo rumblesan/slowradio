@@ -19,20 +19,16 @@ set(SOURCES
   )
 
 add_executable(slow ${SOURCES})
-set_property(TARGET slow PROPERTY C_STANDARD 99)
-target_link_libraries(slow shout)
+target_link_libraries(slow shout m)
 
-find_package(BCLib REQUIRED)
-include_directories("${BCLIB_INCLUDE_DIRS}")
 target_link_libraries(slow bclib)
-
-find_package(LibPStretch REQUIRED)
-include_directories("${LIBPSTRETCH_INCLUDE_DIRS}")
-target_link_libraries(slow pstretch)
-
+target_link_libraries(slow pstretch fftw3f)
 target_link_libraries(slow config)
 target_link_libraries(slow vorbis vorbisfile ogg vorbisenc)
 target_link_libraries(slow pthread)
+
+install(TARGETS slow
+  DESTINATION bin)
 
 #option (WITH_TESTS "build tests" ON)
 
