@@ -16,9 +16,12 @@ RUN cd /opt/bclib/build && cmake .. && make && make install
 RUN git clone https://github.com/rumblesan/libpstretch.git /opt/libpstretch
 RUN cd /opt/libpstretch/build && cmake .. && make && make install
 
-
-COPY . /opt/slowradio
-RUN cd /opt/slowradio/build; cmake ..; make; make install
+RUN mkdir -p /opt/slowradio/src /opt/slowradio/include /opt/slowradio/build
+COPY CMakeLists.txt /opt/slowradio
+COPY src /opt/slowradio/src
+COPY include /opt/slowradio/include
 
 WORKDIR /opt/slowradio
+RUN cd build; cmake ..; make; make install
+
 CMD ["slow", "/opt/cfg/radio.cfg"]
