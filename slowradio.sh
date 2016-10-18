@@ -78,7 +78,7 @@ foreground()
     fi
     local optfolder="$1"
     echo "Running $APP in the foreground"
-    docker run -v "$1":/opt/slowradio $REPO/$APP:$tag 
+    docker run --name $CONTAINER_NAME -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG 
 }
 
 run()
@@ -88,7 +88,7 @@ run()
     fi
     local optfolder="$1"
     echo "Running $APP"
-    docker run -d -v "$1":/opt/slowradio $REPO/$APP:$tag 
+    docker run --name $CONTAINER_NAME -d -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG 
 }
 
 connect()
