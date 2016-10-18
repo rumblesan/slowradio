@@ -24,4 +24,4 @@ COPY include /opt/slowradio/include
 WORKDIR /opt/slowradio
 RUN cd build; cmake ..; make; make install
 
-CMD ["slow", "/opt/cfg/radio.cfg"]
+CMD ["slow", "/opt/slowradio/radio.cfg"]
