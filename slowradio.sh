@@ -74,7 +74,7 @@ pull()
 foreground()
 {
     if [ -z "$1" ]; then
-        dir "Need to give opt folder"
+        die "Need to give opt folder"
     fi
     local optfolder="$1"
     echo "Running $APP in the foreground"
@@ -84,7 +84,7 @@ foreground()
 run()
 {
     if [ -z "$1" ]; then
-        dir "Need to give opt folder"
+        die "Need to give opt folder"
     fi
     local optfolder="$1"
     echo "Running $APP"
@@ -122,10 +122,10 @@ runaction()
         push
         ;;
     "foreground" )
-        foreground
+        foreground "${@:1}"
         ;;
     "run" )
-        run
+        run "${@:1}"
         ;;
     "connect" )
         connect
