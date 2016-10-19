@@ -53,6 +53,7 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
 
     log_info("Encoder: Creating new encoder");
     OggEncoderState *new_encoder = ogg_encoder_state(info->channels, info->samplerate, info->quality);
+    check(new_encoder != NULL, "Could not create new encoder state");
     *encoderP = new_encoder;
 
     TrackInfo *tinfo = input_msg->payload;
@@ -70,7 +71,6 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
 
     message_destroy(input_msg);
     return ENCODINGFILE;
-
   } else if (input_msg->type == STREAMFINISHED) {
     log_info("Encoder: Stream Finished message received");
     message_destroy(input_msg);
