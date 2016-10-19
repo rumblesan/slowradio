@@ -25,4 +25,4 @@ COPY tests /opt/slowradio/tests
 WORKDIR /opt/slowradio
 RUN cd build; cmake ..; make; make install
 
-CMD ["slow", "/opt/slowradio/radio.cfg"]
+CMD ["slowradio", "/opt/slowradio/radio.cfg"]
