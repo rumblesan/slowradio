@@ -217,6 +217,5 @@ void *start_encoder_process(void *_info) {
   if (info != NULL) encoder_process_state_destroy(info);
   if (encoder != NULL) cleanup_encoder(encoder);
   log_info("Encoder: Cleaned up");
-  pthread_exit(NULL);
   return NULL;
 }
