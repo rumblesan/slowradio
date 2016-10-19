@@ -122,10 +122,10 @@ runaction()
         pull
         ;;
     "foreground" )
-        foreground "${@:1}"
+        foreground "${@:2}"
         ;;
     "run" )
-        run "${@:1}"
+        run "${@:2}"
         ;;
     "connect" )
         connect
