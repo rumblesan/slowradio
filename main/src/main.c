@@ -6,7 +6,7 @@
 #include <sndfile.h>
 
 #include "filereader_process.h"
-#include "stretcher.h"
+#include "stretcher_process.h"
 #include "encoder_process.h"
 #include "shoutcast.h"
 #include "config.h"
@@ -35,13 +35,13 @@ int main (int argc, char *argv[]) {
                              radio_config->filereader.usleep_time,
                              fread2stretch);
 
-  StretcherInfo *stretcher_info =
-    stretcher_info_create(radio_config->stretcher.stretch,
-                          radio_config->stretcher.window_size,
-                          radio_config->stretcher.usleep_time,
-                          radio_config->channels,
-                          fread2stretch,
-                          stretch2encode);
+  StretcherConfig *stretcher_cfg =
+    stretcher_config_create(radio_config->stretcher.stretch,
+                            radio_config->stretcher.window_size,
+                            radio_config->stretcher.usleep_time,
+                            radio_config->channels,
+                            fread2stretch,
+                            stretch2encode);
 
   EncoderProcessState *encoder_process_state =
     encoder_process_state_create(radio_config->channels,
@@ -75,8 +75,8 @@ int main (int argc, char *argv[]) {
   pthread_t stretcher_thread;
   int rc2 = pthread_create(&stretcher_thread,
                            NULL,
-                           &start_stretcher,
-                           stretcher_info);
+                           &start_stretcher_process,
+                           stretcher_cfg);
   check(!rc2, "Error creating File Reader thread");
 
   pthread_t encoder_thread;

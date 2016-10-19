@@ -9,7 +9,7 @@ set(SOURCES
   "src/ogg_encoder.c"
   "src/messages.c"
   "src/filechunk.c"
-  "src/stretcher.c"
+  "src/stretcher_process.c"
   "src/shoutcast.c"
   "src/util.c"
   )

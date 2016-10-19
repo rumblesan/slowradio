@@ -5,7 +5,7 @@
 
 #include <sndfile.h>
 
-#include "stretcher.h"
+#include "stretcher_process.h"
 
 #include "messages.h"
 
@@ -13,40 +13,40 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-StretcherInfo *stretcher_info_create(float stretch,
-                                     int window_size,
-                                     int usleep_amount,
-                                     int channels,
-                                     RingBuffer *audio_in,
-                                     RingBuffer *audio_out) {
+StretcherConfig *stretcher_config_create(float stretch,
+                                         int window_size,
+                                         int usleep_amount,
+                                         int channels,
+                                         RingBuffer *pipe_in,
+                                         RingBuffer *pipe_out) {
 
-  StretcherInfo *info = malloc(sizeof(StretcherInfo));
-  check_mem(info);
+  StretcherConfig *cfg = malloc(sizeof(StretcherConfig));
+  check_mem(cfg);
 
-  check(audio_in != NULL, "Invalid audio in buffer passed");
-  info->audio_in = audio_in;
+  check(pipe_in != NULL, "Invalid pipe in buffer passed");
+  cfg->pipe_in = pipe_in;
 
-  check(audio_out != NULL, "Invalid audio out buffer passed");
-  info->audio_out = audio_out;
+  check(pipe_out != NULL, "Invalid pipe out buffer passed");
+  cfg->pipe_out = pipe_out;
 
-  info->window = window_size;
-  info->stretch = stretch;
-  info->channels = channels;
-  info->usleep_amount = usleep_amount;
+  cfg->window = window_size;
+  cfg->stretch = stretch;
+  cfg->channels = channels;
+  cfg->usleep_amount = usleep_amount;
 
-  return info;
+  return cfg;
  error:
   return NULL;
 }
 
-void stretcher_info_destroy(StretcherInfo *info) {
-  free(info);
+void stretcher_config_destroy(StretcherConfig *cfg) {
+  free(cfg);
 }
 
-void *start_stretcher(void *_info) {
-  StretcherInfo *info = _info;
+void *start_stretcher_process(void *_cfg) {
+  StretcherConfig *cfg = _cfg;
 
-  Stretch *stretch = stretch_create(info->channels, info->window, info->stretch);
+  Stretch *stretch = stretch_create(cfg->channels, cfg->window, cfg->stretch);
   Message *input_msg = NULL;
   AudioBuffer *input_audio = NULL;
   AudioBuffer *windowed = NULL;
@@ -55,11 +55,11 @@ void *start_stretcher(void *_info) {
 
   struct timespec tim, tim2;
   tim.tv_sec = 0;
-  tim.tv_nsec = info->usleep_amount;
+  tim.tv_nsec = cfg->usleep_amount;
 
   int startup_wait = 1;
   while (true) {
-    if (!rb_empty(info->audio_in)) {
+    if (!rb_empty(cfg->pipe_in)) {
       log_info("Stretcher: Audio available");
       break;
     } else {
@@ -70,8 +70,8 @@ void *start_stretcher(void *_info) {
 
   log_info("Stretcher: Starting");
   while (true) {
-    if (stretch->need_more_audio && !rb_empty(info->audio_in) && !rb_full(info->audio_out)) {
-      input_msg = rb_pop(info->audio_in);
+    if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
+      input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
       if (input_msg->type == STREAMFINISHED) {
         log_info("Stretcher: Stream Finished message received");
@@ -90,14 +90,14 @@ void *start_stretcher(void *_info) {
                  input_msg->type == TRACKFINISHED
                  ) {
         log_info("Passing message through");
-        rb_push(info->audio_out, input_msg);
+        rb_push(cfg->pipe_out, input_msg);
       } else {
         log_err("Stretcher: Received invalid message of type %d", input_msg->type);
         message_destroy(input_msg);
         input_msg = NULL;
       }
     }
-    if (!stretch->need_more_audio && !rb_full(info->audio_out)) {
+    if (!stretch->need_more_audio && !rb_full(cfg->pipe_out)) {
       windowed = stretch_window(stretch);
       check(windowed != NULL, "Stretcher: Couldn't get windowed audio");
       fft_run(stretch->fft, windowed);
@@ -107,7 +107,7 @@ void *start_stretcher(void *_info) {
       output_msg = audio_buffer_message(stretched);
       check(output_msg != NULL, "Stretcher: Output message issue");
 
-      rb_push(info->audio_out, output_msg);
+      rb_push(cfg->pipe_out, output_msg);
       output_msg = NULL;
       stretched = NULL;
       windowed = NULL;
@@ -118,8 +118,8 @@ void *start_stretcher(void *_info) {
   }
 
   while (true) {
-    if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, stream_finished_message());
+    if (!rb_full(cfg->pipe_out)) {
+      rb_push(cfg->pipe_out, stream_finished_message());
       break;
     } else {
       sched_yield();
@@ -134,7 +134,7 @@ void *start_stretcher(void *_info) {
   if (stretched != NULL) audio_buffer_destroy(stretched);
   if (output_msg != NULL) message_destroy(output_msg);
   if (stretch != NULL) stretch_destroy(stretch);
-  if (info != NULL) stretcher_info_destroy(info);
+  if (cfg != NULL) stretcher_config_destroy(cfg);
   log_info("Stretcher: Cleaned up");
   pthread_exit(NULL);
   return NULL;
