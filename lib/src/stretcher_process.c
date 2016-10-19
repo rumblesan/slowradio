@@ -73,6 +73,7 @@ void *start_stretcher_process(void *_cfg) {
     if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
       input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
+
       if (input_msg->type == STREAMFINISHED) {
         log_info("Stretcher: Stream Finished message received");
         message_destroy(input_msg);
@@ -81,9 +82,7 @@ void *start_stretcher_process(void *_cfg) {
       } else if (input_msg->type == AUDIOBUFFER) {
         input_audio = input_msg->payload;
         stretch_load_samples(stretch, input_audio);
-        // TODO freeing not destroying message as audio buffer
-        // is destroyed inside stretch. Needs to be better
-        free(input_msg);
+        message_destroy(input_msg);
         input_msg = NULL;
       } else if (
                  input_msg->type == NEWTRACK ||
