@@ -6,7 +6,7 @@
 FileChunk *file_chunk_create() {
   FileChunk *chunk = malloc(sizeof(FileChunk));
   check_mem(chunk);
-  chunk->data = NULL;
+  chunk->data = malloc(0);
   chunk->length = 0;
   return chunk;
  error:
@@ -16,7 +16,7 @@ FileChunk *file_chunk_create() {
 FileChunk *file_chunk_extend(FileChunk *chunk, unsigned char *addition, int addlength) {
   unsigned char *new_data = NULL;
   if (chunk->length == 0) {
-    new_data = malloc(addlength * sizeof(unsigned char));
+    new_data = calloc(addlength, sizeof(unsigned char));
     check_mem(new_data);
     chunk->data = new_data;
 
