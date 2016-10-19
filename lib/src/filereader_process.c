@@ -59,7 +59,7 @@ bstring get_random_file(bstring pattern) {
   List *filelist = list_create();
   check(filelist != NULL, "Could not create file list");
 
-  check(!glob(bdata(pattern), GLOB_TILDE, NULL, &globbuf), "Could not glob folder");
+  check(!glob(bdata(pattern), GLOB_NOSORT, NULL, &globbuf), "Could not glob folder");
 
   for(size_t i = 0; i < globbuf.gl_pathc; i += 1) {
     char *name = globbuf.gl_pathv[i];
