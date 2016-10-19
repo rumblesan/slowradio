@@ -3,6 +3,8 @@ include_directories(../lib/include)
 
 set(TEST_SOURCES
     "src/test-encoder.c"
+    "src/test-filechunk.c"
+    "src/test-messages.c"
     )
 
 foreach(TEST_FILE ${SOURCES} ${TEST_SOURCES})
