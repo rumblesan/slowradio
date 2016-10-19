@@ -71,6 +71,10 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
     message_destroy(input_msg);
     return ENCODINGFILE;
 
+  } else if (input_msg->type == STREAMFINISHED) {
+    log_info("Encoder: Stream Finished message received");
+    message_destroy(input_msg);
+    return CLOSINGSTREAM;
   } else {
     log_err("Encoder: Received message of type %s but waiting for new track", msg_type(input_msg));
     message_destroy(input_msg);
@@ -167,6 +171,10 @@ void *start_encoder_process(void *_info) {
   log_info("Encoder: Starting");
   bool running = true;
   while (running) {
+
+    if (state == CLOSINGSTREAM || state == ENCODERERROR) {
+      running = false;
+    }
 
     if (pipes_ready(info->pipe_in, info->pipe_out)) {
       Message *input_msg = rb_pop(info->pipe_in);
