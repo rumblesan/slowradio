@@ -12,7 +12,7 @@
 #include "vorbis/codec.h"
 #include "vorbis/vorbisfile.h"
 
-#include "filereader.h"
+#include "filereader_process.h"
 #include "messages.h"
 
 #include "bclib/dbg.h"
@@ -20,31 +20,31 @@
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
-FileReaderInfo *filereader_info_create(int channels,
-                                       int read_size,
-                                       bstring pattern,
-                                       int usleep_amount,
-                                       RingBuffer *audio_out) {
+FileReaderConfig *filereader_config_create(int channels,
+                                           int read_size,
+                                           bstring pattern,
+                                           int usleep_amount,
+                                           RingBuffer *audio_out) {
 
-  FileReaderInfo *info = malloc(sizeof(FileReaderInfo));
-  check_mem(info);
+  FileReaderConfig *cfg = malloc(sizeof(FileReaderConfig));
+  check_mem(cfg);
 
-  info->channels      = channels;
-  info->read_size     = read_size;
-  info->usleep_amount = usleep_amount;
-  info->pattern       = pattern;
+  cfg->channels      = channels;
+  cfg->read_size     = read_size;
+  cfg->usleep_amount = usleep_amount;
+  cfg->pattern       = pattern;
 
   check(audio_out != NULL, "FileReader: Invalid audio out buffer passed");
-  info->audio_out = audio_out;
+  cfg->audio_out = audio_out;
 
-  return info;
+  return cfg;
  error:
   return NULL;
 }
 
-void filereader_info_destroy(FileReaderInfo *info) {
-  bdestroy(info->pattern);
-  free(info);
+void filereader_config_destroy(FileReaderConfig *cfg) {
+  bdestroy(cfg->pattern);
+  free(cfg);
 }
 
 bool is_regular_file(const char *path) {
@@ -102,8 +102,8 @@ int ov_channels(OggVorbis_File *vf) {
   return vi->channels;
 }
 
-void *start_filereader(void *_info) {
-  FileReaderInfo *info = _info;
+void *start_filereader_process(void *_cfg) {
+  FileReaderConfig *cfg = _cfg;
 
   OggVorbis_File *vf = NULL;
   bool opened = false;
@@ -116,10 +116,10 @@ void *start_filereader(void *_info) {
 
   srand(time(NULL));
 
-  check(info != NULL, "FileReader: Invalid info data passed");
+  check(cfg != NULL, "FileReader: Invalid info data passed");
 
-  int size = info->read_size;
-  int channels = info->channels;
+  int size = cfg->read_size;
+  int channels = cfg->channels;
   int pc_size = size / channels;
   int pc_read = 0;
 
@@ -134,9 +134,9 @@ void *start_filereader(void *_info) {
   int current_section;
 
   while (true) {
-    if (!opened && !rb_full(info->audio_out)) {
+    if (!opened && !rb_full(cfg->audio_out)) {
       log_info("FileReader: Need to open new file");
-      bstring newfile = get_random_file(info->pattern);
+      bstring newfile = get_random_file(cfg->pattern);
       if (blength(newfile) == 0) {
         log_err("FileReader: Could not get random file");
         continue;
@@ -153,8 +153,8 @@ void *start_filereader(void *_info) {
         vf = NULL;
         continue;
       }
-      if(ov_channels(vf) != info->channels) {
-        log_err("FileReader: Only accepting files with %d channels", info->channels);
+      if(ov_channels(vf) != cfg->channels) {
+        log_err("FileReader: Only accepting files with %d channels", cfg->channels);
         ov_clear(vf);
         free(vf);
         vf = NULL;
@@ -165,15 +165,15 @@ void *start_filereader(void *_info) {
       out_message = new_track_message(track_info);
       check(out_message != NULL,
             "FileReader: Could not create track info message");
-      rb_push(info->audio_out, out_message);
+      rb_push(cfg->audio_out, out_message);
       bdestroy(newfile);
 
-    } else if (!rb_full(info->audio_out)) {
+    } else if (!rb_full(cfg->audio_out)) {
 
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
 
       if (read_amount == 0) {
-        rb_push(info->audio_out, track_finished_message());
+        rb_push(cfg->audio_out, track_finished_message());
         ov_clear(vf);
         opened = false;
         continue;
@@ -188,29 +188,29 @@ void *start_filereader(void *_info) {
       out_message = audio_buffer_message(out_audio);
       check(out_message != NULL,
             "FileReader: Could not create audio array message");
-      rb_push(info->audio_out, out_message);
+      rb_push(cfg->audio_out, out_message);
       out_message = NULL;
       out_audio = NULL;
 
     } else {
       sched_yield();
-      usleep(info->usleep_amount);
+      usleep(cfg->usleep_amount);
     }
   }
 
   while (true) {
-    if (!rb_full(info->audio_out)) {
-      rb_push(info->audio_out, stream_finished_message());
+    if (!rb_full(cfg->audio_out)) {
+      rb_push(cfg->audio_out, stream_finished_message());
       break;
     } else {
       sched_yield();
-      usleep(info->usleep_amount);
+      usleep(cfg->usleep_amount);
     }
   }
 
  error:
   log_info("FileReader: Finished");
-  if (info != NULL) filereader_info_destroy(info);
+  if (cfg != NULL) filereader_config_destroy(cfg);
   if (oggiob != NULL) {
     if (oggiob[0] != NULL) free(oggiob[0]);
     if (oggiob[1] != NULL) free(oggiob[1]);

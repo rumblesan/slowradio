@@ -5,7 +5,7 @@
 
 #include <sndfile.h>
 
-#include "filereader.h"
+#include "filereader_process.h"
 #include "stretcher.h"
 #include "encoder_process.h"
 #include "shoutcast.h"
@@ -28,12 +28,12 @@ int main (int argc, char *argv[]) {
   RingBuffer *stretch2encode = rb_create(100);
   RingBuffer *encode2stream = rb_create(100);
 
-  FileReaderInfo *filereader_info =
-    filereader_info_create(radio_config->channels,
-                           radio_config->filereader.read_size,
-                           radio_config->filereader.pattern,
-                           radio_config->filereader.usleep_time,
-                           fread2stretch);
+  FileReaderConfig *filereader_config =
+    filereader_config_create(radio_config->channels,
+                             radio_config->filereader.read_size,
+                             radio_config->filereader.pattern,
+                             radio_config->filereader.usleep_time,
+                             fread2stretch);
 
   StretcherInfo *stretcher_info =
     stretcher_info_create(radio_config->stretcher.stretch,
@@ -68,8 +68,8 @@ int main (int argc, char *argv[]) {
   pthread_t reader_thread;
   int rc1 = pthread_create(&reader_thread,
                            NULL,
-                           &start_filereader,
-                           filereader_info);
+                           &start_filereader_process,
+                           filereader_config);
   check(!rc1, "Error creating File Reader thread");
 
   pthread_t stretcher_thread;
