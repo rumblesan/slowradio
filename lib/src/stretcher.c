@@ -53,6 +53,10 @@ void *start_stretcher(void *_info) {
   AudioBuffer *stretched = NULL;
   Message *output_msg = NULL;
 
+  struct timespec tim, tim2;
+  tim.tv_sec = 0;
+  tim.tv_nsec = info->usleep_amount;
+
   int startup_wait = 1;
   while (true) {
     if (!rb_empty(info->audio_in)) {
@@ -109,7 +113,7 @@ void *start_stretcher(void *_info) {
       windowed = NULL;
     } else {
       sched_yield();
-      usleep(info->usleep_amount);
+      nanosleep(&tim, &tim2);
     }
   }
 
@@ -119,7 +123,7 @@ void *start_stretcher(void *_info) {
       break;
     } else {
       sched_yield();
-      usleep(info->usleep_amount);
+      nanosleep(&tim, &tim2);
     }
   }
 

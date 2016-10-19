@@ -153,6 +153,10 @@ void *start_encoder_process(void *_info) {
 
   check(info != NULL, "Encoder: Invalid info data passed");
 
+  struct timespec tim, tim2;
+  tim.tv_sec = 0;
+  tim.tv_nsec = info->usleep_time;
+
   log_info("Encoder: Waiting for input");
   check(wait_for_input(info->pipe_in, 1, 60), "Encoder: Could not get input in time");
 
@@ -181,7 +185,7 @@ void *start_encoder_process(void *_info) {
 
     } else {
       sched_yield();
-      usleep(info->usleep_time);
+      nanosleep(&tim, &tim2);
     }
 
   }
@@ -192,7 +196,7 @@ void *start_encoder_process(void *_info) {
       break;
     } else {
       sched_yield();
-      usleep(info->usleep_time);
+      nanosleep(&tim, &tim2);
     }
   }
 

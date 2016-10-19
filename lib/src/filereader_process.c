@@ -123,6 +123,10 @@ void *start_filereader_process(void *_cfg) {
   int pc_size = size / channels;
   int pc_read = 0;
 
+  struct timespec tim, tim2;
+  tim.tv_sec = 0;
+  tim.tv_nsec = cfg->usleep_amount;
+
   oggiob = malloc(channels * sizeof(float *));
   check_mem(oggiob);
   for (int c = 0; c < channels; c += 1) {
@@ -194,7 +198,7 @@ void *start_filereader_process(void *_cfg) {
 
     } else {
       sched_yield();
-      usleep(cfg->usleep_amount);
+      nanosleep(&tim, &tim2);
     }
   }
 
@@ -204,7 +208,7 @@ void *start_filereader_process(void *_cfg) {
       break;
     } else {
       sched_yield();
-      usleep(cfg->usleep_amount);
+      nanosleep(&tim, &tim2);
     }
   }
 
