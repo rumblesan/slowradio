@@ -9,9 +9,5 @@ include_directories(lib/include)
 add_subdirectory(lib)
 add_subdirectory(main)
 
-#option (WITH_TESTS "build tests" ON)
-
-#if (WITH_TESTS)
-#    enable_testing()
-#    add_subdirectory(tests)
-#endif()
+enable_testing()
+add_subdirectory(tests)
