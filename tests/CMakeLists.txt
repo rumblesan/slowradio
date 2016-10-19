@@ -5,6 +5,7 @@ set(TEST_SOURCES
     "src/test-encoder.c"
     "src/test-filechunk.c"
     "src/test-messages.c"
+    "src/test-stretcher.c"
     )
 
 foreach(TEST_FILE ${SOURCES} ${TEST_SOURCES})
