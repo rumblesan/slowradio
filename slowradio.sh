@@ -119,7 +119,7 @@ runaction()
         push
         ;;
     "pull" )
-        push
+        pull
         ;;
     "foreground" )
         foreground "${@:1}"
