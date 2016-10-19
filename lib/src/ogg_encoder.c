@@ -135,5 +135,5 @@ void cleanup_encoder(OggEncoderState *encoder) {
   vorbis_block_clear(&(encoder->vb));
   vorbis_dsp_clear(&(encoder->vd));
   vorbis_info_clear(&(encoder->vi));
-  // TODO not freeing here because not really mallocing
+  free(encoder);
 }

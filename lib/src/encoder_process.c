@@ -46,23 +46,23 @@ void encoder_process_state_destroy(EncoderProcessState *state) {
   free(state);
 }
 
-EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *encoder, Message *input_msg) {
+EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState **encoderP, Message *input_msg) {
 
   if (input_msg->type == NEWTRACK) {
     log_info("Encoder: New Track received");
 
     log_info("Encoder: Creating new encoder");
     OggEncoderState *new_encoder = ogg_encoder_state(info->channels, info->samplerate, info->quality);
-    (*encoder) = *(new_encoder);
+    *encoderP = new_encoder;
 
     TrackInfo *tinfo = input_msg->payload;
     check(tinfo != NULL, "Could not get track info from message");
 
-    set_metadata(encoder, tinfo);
+    set_metadata(new_encoder, tinfo);
 
     FileChunk *headers = file_chunk_create();
     check(headers != NULL, "Could not create headers file chunk");
-    write_headers(encoder, headers);
+    write_headers(new_encoder, headers);
     Message *output_msg = file_chunk_message(headers);
     check(output_msg != NULL, "Could not create headers message");
 
@@ -80,9 +80,13 @@ EncoderState waiting_for_file_state(EncoderProcessState *info, OggEncoderState *
   return ENCODERERROR;
 }
 
-EncoderState encoding_file_state(EncoderProcessState *info, OggEncoderState *encoder, Message *input_msg) {
+EncoderState encoding_file_state(EncoderProcessState *info, OggEncoderState **encoderP, Message *input_msg) {
   FileChunk *audio_data = NULL;
   Message *output_msg   = NULL;
+
+  check(encoderP != NULL, "Invalid encoder passed");
+  OggEncoderState *encoder = *encoderP;
+  check(encoder != NULL, "Invalid encoder passed");
 
   if (input_msg->type == AUDIOBUFFER) {
     AudioBuffer *audio = input_msg->payload;
@@ -108,7 +112,6 @@ EncoderState encoding_file_state(EncoderProcessState *info, OggEncoderState *enc
     log_info("Encoder: Stream Finished message received");
     message_destroy(input_msg);
     return CLOSINGSTREAM;
-
   } else if (input_msg->type == TRACKFINISHED) {
     log_info("Encoder: Track Finished message received");
 
@@ -131,6 +134,7 @@ EncoderState encoding_file_state(EncoderProcessState *info, OggEncoderState *enc
     }
 
     cleanup_encoder(encoder);
+    *encoderP = NULL;
     message_destroy(input_msg);
     return WAITINGFORFILE;
   } else {
@@ -147,7 +151,7 @@ EncoderState encoding_file_state(EncoderProcessState *info, OggEncoderState *enc
 void *start_encoder_process(void *_info) {
   EncoderProcessState *info = _info;
 
-  OggEncoderState encoder;
+  OggEncoderState *encoder = NULL;
 
   EncoderState state = WAITINGFORFILE;
 
@@ -203,7 +207,7 @@ void *start_encoder_process(void *_info) {
  error:
   log_info("Encoder: Finished");
   if (info != NULL) encoder_process_state_destroy(info);
-  cleanup_encoder(&encoder);
+  if (encoder != NULL) cleanup_encoder(encoder);
   log_info("Encoder: Cleaned up");
   pthread_exit(NULL);
   return NULL;
