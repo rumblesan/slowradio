@@ -22,7 +22,7 @@ int main (int argc, char *argv[]) {
 
   char *config_path = argv[1];
 
-  RadioConfig *radio_config = read_config(config_path);
+  RadioInputCfg *radio_config = read_config(config_path);
 
   RingBuffer *fread2stretch = rb_create(100);
   RingBuffer *stretch2encode = rb_create(100);

@@ -6,12 +6,12 @@
 
 #include "bclib/dbg.h"
 
-RadioConfig *read_config(char *config_path) {
+RadioInputCfg *read_config(char *config_path) {
   log_info("config path %s", config_path);
   config_t config;
   config_t *cfg = &config;
 
-  RadioConfig *radio_config = malloc(sizeof(RadioConfig));
+  RadioInputCfg *radio_config = malloc(sizeof(RadioInputCfg));
   check_mem(radio_config);
 
   config_init(cfg);

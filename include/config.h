@@ -3,25 +3,25 @@
 
 #include "bclib/bstrlib.h"
 
-typedef struct FileReaderConfig {
+typedef struct FileReaderInputCfg {
   bstring pattern;
   int read_size;
   int usleep_time;
-} FileReaderConfig;
+} FileReaderInputCfg;
 
-typedef struct StretcherConfig {
+typedef struct StretcherInputCfg {
   double stretch;
   int window_size;
   int usleep_time;
-} StretcherConfig;
+} StretcherInputCfg;
 
-typedef struct EncoderConfig {
+typedef struct EncoderInputCfg {
   int samplerate;
   int usleep_time;
   double quality;
-} EncoderConfig;
+} EncoderInputCfg;
 
-typedef struct ShoutcastConfig {
+typedef struct ShoutcastInputCfg {
   bstring host;
   int port;
   bstring source;
@@ -31,20 +31,20 @@ typedef struct ShoutcastConfig {
   bstring description;
   bstring genre;
   bstring url;
-} ShoutcastConfig;
+} ShoutcastInputCfg;
 
-typedef struct RadioConfig {
+typedef struct RadioInputCfg {
 
   int channels;
   const char *htest;
 
-  FileReaderConfig filereader;
-  StretcherConfig stretcher;
-  EncoderConfig encoder;
-  ShoutcastConfig shoutcast;
+  FileReaderInputCfg filereader;
+  StretcherInputCfg stretcher;
+  EncoderInputCfg encoder;
+  ShoutcastInputCfg shoutcast;
 
-} RadioConfig;
+} RadioInputCfg;
 
-RadioConfig *read_config(char *config_path);
+RadioInputCfg *read_config(char *config_path);
 
 #endif
