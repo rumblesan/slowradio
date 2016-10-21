@@ -18,7 +18,7 @@ EncoderProcessConfig *encoder_config_create(int channels,
                                             int samplerate,
                                             int format,
                                             double quality,
-                                            int usleep_time,
+                                            int thread_sleep,
                                             RingBuffer *pipe_in,
                                             RingBuffer *pipe_out) {
 
@@ -31,11 +31,11 @@ EncoderProcessConfig *encoder_config_create(int channels,
   check(pipe_out != NULL, "Invalid msg out buffer passed");
   cfg->pipe_out = pipe_out;
 
-  cfg->channels    = channels;
-  cfg->samplerate  = samplerate;
-  cfg->format      = format;
-  cfg->quality     = quality;
-  cfg->usleep_time = usleep_time;
+  cfg->channels     = channels;
+  cfg->samplerate   = samplerate;
+  cfg->format       = format;
+  cfg->quality      = quality;
+  cfg->thread_sleep = thread_sleep;
 
   return cfg;
  error:
@@ -163,7 +163,7 @@ void *start_encoder(void *_cfg) {
 
   struct timespec tim, tim2;
   tim.tv_sec = 0;
-  tim.tv_nsec = cfg->usleep_time;
+  tim.tv_nsec = cfg->thread_sleep;
 
   log_info("Encoder: Waiting for input");
   check(wait_for_input(cfg->pipe_in, 1, 60), "Encoder: Could not get input in time");

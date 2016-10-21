@@ -23,16 +23,16 @@
 FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
-                                                  int usleep_amount,
+                                                  int thread_sleep,
                                                   RingBuffer *audio_out) {
 
   FileReaderProcessConfig *cfg = malloc(sizeof(FileReaderProcessConfig));
   check_mem(cfg);
 
-  cfg->channels      = channels;
-  cfg->read_size     = read_size;
-  cfg->usleep_amount = usleep_amount;
-  cfg->pattern       = pattern;
+  cfg->channels     = channels;
+  cfg->read_size    = read_size;
+  cfg->thread_sleep = thread_sleep;
+  cfg->pattern      = pattern;
 
   check(audio_out != NULL, "FileReader: Invalid audio out buffer passed");
   cfg->audio_out = audio_out;
@@ -125,7 +125,7 @@ void *start_filereader(void *_cfg) {
 
   struct timespec tim, tim2;
   tim.tv_sec = 0;
-  tim.tv_nsec = cfg->usleep_amount;
+  tim.tv_nsec = cfg->thread_sleep;
 
   oggiob = malloc(channels * sizeof(float *));
   check_mem(oggiob);

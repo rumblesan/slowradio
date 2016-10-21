@@ -19,7 +19,7 @@ typedef struct EncoderProcessConfig {
   int channels;
   int samplerate;
   int format;
-  int usleep_time;
+  int thread_sleep;
   double quality;
 
 } EncoderProcessConfig;
@@ -28,7 +28,7 @@ EncoderProcessConfig *encoder_config_create(int channels,
                                             int samplerate,
                                             int format,
                                             double quality,
-                                            int usleep_time,
+                                            int thread_sleep,
                                             RingBuffer *pipe_in,
                                             RingBuffer *pipe_out);
 

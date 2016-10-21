@@ -11,7 +11,7 @@ typedef struct StretcherProcessConfig {
 
   int window;
 
-  int usleep_amount;
+  int thread_sleep;
 
   float stretch;
 
@@ -21,7 +21,7 @@ typedef struct StretcherProcessConfig {
 
 StretcherProcessConfig *stretcher_config_create(float stretch,
                                          int window_size,
-                                         int usleep_amount,
+                                         int thread_sleep,
                                          int channels,
                                          RingBuffer *pipe_in,
                                          RingBuffer *pipe_out);

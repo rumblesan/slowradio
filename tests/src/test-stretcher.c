@@ -12,7 +12,7 @@
 char *test_stretcher_config_create() {
   float stretch = 10.0;
   int window_size = 2048;
-  int usleep_amount = 20;
+  int thread_sleep = 20;
   int channels = 2;
 
   RingBuffer *pipe_in = rb_create(100);
@@ -20,7 +20,7 @@ char *test_stretcher_config_create() {
 
   StretcherProcessConfig *s = stretcher_config_create(stretch,
                                                       window_size,
-                                                      usleep_amount,
+                                                      thread_sleep,
                                                       channels,
                                                       pipe_in,
                                                       pipe_out);
@@ -36,7 +36,7 @@ char *test_stretcher_config_create() {
 char *test_stretcher_loop() {
   float stretch = 3.0;
   int window_size = 2048;
-  int usleep_amount = 20;
+  int thread_sleep = 20;
   int channels = 2;
 
   int maxmsgs = 10;
@@ -51,7 +51,7 @@ char *test_stretcher_loop() {
 
   StretcherProcessConfig *s = stretcher_config_create(stretch,
                                                       window_size,
-                                                      usleep_amount,
+                                                      thread_sleep,
                                                       channels,
                                                       pipe_in,
                                                       pipe_out);

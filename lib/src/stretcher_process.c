@@ -15,7 +15,7 @@
 
 StretcherProcessConfig *stretcher_config_create(float stretch,
                                                 int window_size,
-                                                int usleep_amount,
+                                                int thread_sleep,
                                                 int channels,
                                                 RingBuffer *pipe_in,
                                                 RingBuffer *pipe_out) {
@@ -29,10 +29,10 @@ StretcherProcessConfig *stretcher_config_create(float stretch,
   check(pipe_out != NULL, "Invalid pipe out buffer passed");
   cfg->pipe_out = pipe_out;
 
-  cfg->window = window_size;
-  cfg->stretch = stretch;
-  cfg->channels = channels;
-  cfg->usleep_amount = usleep_amount;
+  cfg->window       = window_size;
+  cfg->stretch      = stretch;
+  cfg->channels     = channels;
+  cfg->thread_sleep = thread_sleep;
 
   return cfg;
  error:
@@ -55,7 +55,7 @@ void *start_stretcher(void *_cfg) {
 
   struct timespec tim, tim2;
   tim.tv_sec = 0;
-  tim.tv_nsec = cfg->usleep_amount;
+  tim.tv_nsec = cfg->thread_sleep;
 
   int startup_wait = 1;
   while (true) {
