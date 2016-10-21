@@ -3,7 +3,7 @@
 
 #include "bclib/ringbuffer.h"
 
-typedef struct StretcherConfig {
+typedef struct StretcherProcessConfig {
 
   RingBuffer *pipe_in;
 
@@ -17,17 +17,17 @@ typedef struct StretcherConfig {
 
   int channels;
 
-} StretcherConfig;
+} StretcherProcessConfig;
 
-StretcherConfig *stretcher_config_create(float stretch,
+StretcherProcessConfig *stretcher_config_create(float stretch,
                                          int window_size,
                                          int usleep_amount,
                                          int channels,
                                          RingBuffer *pipe_in,
                                          RingBuffer *pipe_out);
 
-void stretcher_config_destroy(StretcherConfig *cfg);
+void stretcher_config_destroy(StretcherProcessConfig *cfg);
 
-void *start_stretcher_process(void *_cfg);
+void *start_stretcher(void *_cfg);
 
 #endif

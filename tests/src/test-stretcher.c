@@ -18,12 +18,12 @@ char *test_stretcher_config_create() {
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
 
-  StretcherConfig *s = stretcher_config_create(stretch,
-                                               window_size,
-                                               usleep_amount,
-                                               channels,
-                                               pipe_in,
-                                               pipe_out);
+  StretcherProcessConfig *s = stretcher_config_create(stretch,
+                                                      window_size,
+                                                      usleep_amount,
+                                                      channels,
+                                                      pipe_in,
+                                                      pipe_out);
 
   mu_assert(s != NULL, "Could not create stretcher config");
 
@@ -49,12 +49,12 @@ char *test_stretcher_loop() {
   Message *output_msg = NULL;
 
 
-  StretcherConfig *s = stretcher_config_create(stretch,
-                                               window_size,
-                                               usleep_amount,
-                                               channels,
-                                               pipe_in,
-                                               pipe_out);
+  StretcherProcessConfig *s = stretcher_config_create(stretch,
+                                                      window_size,
+                                                      usleep_amount,
+                                                      channels,
+                                                      pipe_in,
+                                                      pipe_out);
 
   mu_assert(s != NULL, "Could not create stretcher config");
 
@@ -66,7 +66,7 @@ char *test_stretcher_loop() {
   input_msg = stream_finished_message();
   rb_push(pipe_in, input_msg);
 
-  start_stretcher_process(s);
+  start_stretcher(s);
 
   mu_assert(!rb_empty(pipe_out), "Output pipe should not be empty");
 

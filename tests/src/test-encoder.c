@@ -17,17 +17,17 @@ char *test_encoder_config_create() {
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
 
-  EncoderProcessState *s = encoder_process_state_create(channels,
-                                                        samplerate,
-                                                        format,
-                                                        quality,
-                                                        usleep_time,
-                                                        pipe_in,
-                                                        pipe_out);
+  EncoderProcessConfig *cfg = encoder_config_create(channels,
+                                                    samplerate,
+                                                    format,
+                                                    quality,
+                                                    usleep_time,
+                                                    pipe_in,
+                                                    pipe_out);
 
-  mu_assert(s != NULL, "Could not create encoder process state");
+  mu_assert(cfg != NULL, "Could not create encoder process config");
 
-  encoder_process_state_destroy(s);
+  encoder_config_destroy(cfg);
   rb_destroy(pipe_in);
   rb_destroy(pipe_out);
   return NULL;
@@ -50,15 +50,15 @@ char *test_encoder_loop() {
   RingBuffer *pipe_in = rb_create(maxmsgs + 10);
   RingBuffer *pipe_out = rb_create(maxmsgs + 10);
 
-  EncoderProcessState *s = encoder_process_state_create(channels,
-                                                        samplerate,
-                                                        format,
-                                                        quality,
-                                                        usleep_time,
-                                                        pipe_in,
-                                                        pipe_out);
+  EncoderProcessConfig *cfg = encoder_config_create(channels,
+                                                    samplerate,
+                                                    format,
+                                                    quality,
+                                                    usleep_time,
+                                                    pipe_in,
+                                                    pipe_out);
 
-  mu_assert(s != NULL, "Could not create encoder process state");
+  mu_assert(cfg != NULL, "Could not create encoder process config");
 
   input_msg = new_track_message(track_info);
   rb_push(pipe_in, input_msg);
@@ -70,7 +70,7 @@ char *test_encoder_loop() {
   input_msg = stream_finished_message();
   rb_push(pipe_in, input_msg);
 
-  start_encoder_process(s);
+  start_encoder(cfg);
 
   mu_assert(!rb_empty(pipe_out), "Output pipe should not be empty");
 
@@ -101,15 +101,15 @@ char *test_multi_loop() {
   RingBuffer *pipe_in = rb_create(tracks * (track_msgs + 10));
   RingBuffer *pipe_out = rb_create(tracks * (track_msgs + 10));
 
-  EncoderProcessState *s = encoder_process_state_create(channels,
-                                                        samplerate,
-                                                        format,
-                                                        quality,
-                                                        usleep_time,
-                                                        pipe_in,
-                                                        pipe_out);
+  EncoderProcessConfig *cfg = encoder_config_create(channels,
+                                                    samplerate,
+                                                    format,
+                                                    quality,
+                                                    usleep_time,
+                                                    pipe_in,
+                                                    pipe_out);
 
-  mu_assert(s != NULL, "Could not create encoder process state");
+  mu_assert(cfg != NULL, "Could not create encoder process config");
 
   for (int t = 0; t < tracks; t += 1) {
     log_info("Track %d", t + 1);
@@ -128,7 +128,7 @@ char *test_multi_loop() {
   input_msg = stream_finished_message();
   rb_push(pipe_in, input_msg);
 
-  start_encoder_process(s);
+  start_encoder(cfg);
 
   mu_assert(!rb_empty(pipe_out), "Output pipe should not be empty");
 

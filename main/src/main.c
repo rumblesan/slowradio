@@ -28,14 +28,14 @@ int main (int argc, char *argv[]) {
   RingBuffer *stretch2encode = rb_create(100);
   RingBuffer *encode2stream = rb_create(100);
 
-  FileReaderConfig *filereader_config =
+  FileReaderProcessConfig *filereader_cfg =
     filereader_config_create(radio_config->channels,
                              radio_config->filereader.read_size,
                              radio_config->filereader.pattern,
                              radio_config->filereader.usleep_time,
                              fread2stretch);
 
-  StretcherConfig *stretcher_cfg =
+  StretcherProcessConfig *stretcher_cfg =
     stretcher_config_create(radio_config->stretcher.stretch,
                             radio_config->stretcher.window_size,
                             radio_config->stretcher.usleep_time,
@@ -43,8 +43,8 @@ int main (int argc, char *argv[]) {
                             fread2stretch,
                             stretch2encode);
 
-  EncoderProcessState *encoder_process_state =
-    encoder_process_state_create(radio_config->channels,
+  EncoderProcessConfig *encoder_cfg =
+    encoder_config_create(radio_config->channels,
                                  radio_config->encoder.samplerate,
                                  SF_FORMAT_OGG | SF_FORMAT_VORBIS,
                                  radio_config->encoder.quality,
@@ -68,22 +68,22 @@ int main (int argc, char *argv[]) {
   pthread_t reader_thread;
   int rc1 = pthread_create(&reader_thread,
                            NULL,
-                           &start_filereader_process,
-                           filereader_config);
+                           &start_filereader,
+                           filereader_cfg);
   check(!rc1, "Error creating File Reader thread");
 
   pthread_t stretcher_thread;
   int rc2 = pthread_create(&stretcher_thread,
                            NULL,
-                           &start_stretcher_process,
+                           &start_stretcher,
                            stretcher_cfg);
   check(!rc2, "Error creating File Reader thread");
 
   pthread_t encoder_thread;
   int rc3 = pthread_create(&encoder_thread,
                            NULL,
-                           &start_encoder_process,
-                           encoder_process_state);
+                           &start_encoder,
+                           encoder_cfg);
   check(!rc3, "Error creating File Reader thread");
 
   pthread_t broadcast_thread;

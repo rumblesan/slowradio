@@ -20,13 +20,13 @@
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
-FileReaderConfig *filereader_config_create(int channels,
-                                           int read_size,
-                                           bstring pattern,
-                                           int usleep_amount,
-                                           RingBuffer *audio_out) {
+FileReaderProcessConfig *filereader_config_create(int channels,
+                                                  int read_size,
+                                                  bstring pattern,
+                                                  int usleep_amount,
+                                                  RingBuffer *audio_out) {
 
-  FileReaderConfig *cfg = malloc(sizeof(FileReaderConfig));
+  FileReaderProcessConfig *cfg = malloc(sizeof(FileReaderProcessConfig));
   check_mem(cfg);
 
   cfg->channels      = channels;
@@ -42,7 +42,7 @@ FileReaderConfig *filereader_config_create(int channels,
   return NULL;
 }
 
-void filereader_config_destroy(FileReaderConfig *cfg) {
+void filereader_config_destroy(FileReaderProcessConfig *cfg) {
   bdestroy(cfg->pattern);
   free(cfg);
 }
@@ -102,8 +102,8 @@ int ov_channels(OggVorbis_File *vf) {
   return vi->channels;
 }
 
-void *start_filereader_process(void *_cfg) {
-  FileReaderConfig *cfg = _cfg;
+void *start_filereader(void *_cfg) {
+  FileReaderProcessConfig *cfg = _cfg;
 
   OggVorbis_File *vf = NULL;
   bool opened = false;

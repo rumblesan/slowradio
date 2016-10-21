@@ -1,11 +1,11 @@
-#ifndef __SLOW_RADIO_FILE_READER__
-#define __SLOW_RADIO_FILE_READER__
+#ifndef __SLOW_RADIO_FILEREADER_PROCESS__
+#define __SLOW_RADIO_FILEREADER_PROCESS__
 
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
 
-typedef struct FileReaderConfig {
+typedef struct FileReaderProcessConfig {
 
   int channels;
 
@@ -17,16 +17,16 @@ typedef struct FileReaderConfig {
 
   RingBuffer *audio_out;
 
-} FileReaderConfig;
+} FileReaderProcessConfig;
 
-FileReaderConfig *filereader_config_create(int channels,
-                                           int read_size,
-                                           bstring pattern,
-                                           int usleep_amount,
-                                           RingBuffer *audio_out);
+FileReaderProcessConfig *filereader_config_create(int channels,
+                                                  int read_size,
+                                                  bstring pattern,
+                                                  int usleep_amount,
+                                                  RingBuffer *audio_out);
 
-void filereader_config_destroy(FileReaderConfig *cfg);
+void filereader_config_destroy(FileReaderProcessConfig *cfg);
 
-void *start_filereader_process(void *_cfg);
+void *start_filereader(void *_cfg);
 
 #endif

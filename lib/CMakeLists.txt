@@ -5,12 +5,12 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -std=c99 -D_POSIX_C_SOURCE=199309L")
 
 set(SOURCES
   "src/filereader_process.c"
+  "src/stretcher_process.c"
   "src/encoder_process.c"
   "src/ogg_encoder.c"
+  "src/broadcast_process.c"
   "src/messages.c"
   "src/filechunk.c"
-  "src/stretcher_process.c"
-  "src/broadcast_process.c"
   "src/util.c"
   )
 

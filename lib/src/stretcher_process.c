@@ -13,14 +13,14 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-StretcherConfig *stretcher_config_create(float stretch,
-                                         int window_size,
-                                         int usleep_amount,
-                                         int channels,
-                                         RingBuffer *pipe_in,
-                                         RingBuffer *pipe_out) {
+StretcherProcessConfig *stretcher_config_create(float stretch,
+                                                int window_size,
+                                                int usleep_amount,
+                                                int channels,
+                                                RingBuffer *pipe_in,
+                                                RingBuffer *pipe_out) {
 
-  StretcherConfig *cfg = malloc(sizeof(StretcherConfig));
+  StretcherProcessConfig *cfg = malloc(sizeof(StretcherProcessConfig));
   check_mem(cfg);
 
   check(pipe_in != NULL, "Invalid pipe in buffer passed");
@@ -39,12 +39,12 @@ StretcherConfig *stretcher_config_create(float stretch,
   return NULL;
 }
 
-void stretcher_config_destroy(StretcherConfig *cfg) {
+void stretcher_config_destroy(StretcherProcessConfig *cfg) {
   free(cfg);
 }
 
-void *start_stretcher_process(void *_cfg) {
-  StretcherConfig *cfg = _cfg;
+void *start_stretcher(void *_cfg) {
+  StretcherProcessConfig *cfg = _cfg;
 
   Stretch *stretch = stretch_create(cfg->channels, cfg->window, cfg->stretch);
   Message *input_msg = NULL;

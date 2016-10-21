@@ -10,7 +10,7 @@ typedef enum {
   ENCODERERROR,
 } EncoderState;
 
-typedef struct EncoderProcessState {
+typedef struct EncoderProcessConfig {
 
   RingBuffer *pipe_in;
 
@@ -22,18 +22,18 @@ typedef struct EncoderProcessState {
   int usleep_time;
   double quality;
 
-} EncoderProcessState;
+} EncoderProcessConfig;
 
-EncoderProcessState *encoder_process_state_create(int channels,
-                                                  int samplerate,
-                                                  int format,
-                                                  double quality,
-                                                  int usleep_time,
-                                                  RingBuffer *pipe_in,
-                                                  RingBuffer *pipe_out);
+EncoderProcessConfig *encoder_config_create(int channels,
+                                            int samplerate,
+                                            int format,
+                                            double quality,
+                                            int usleep_time,
+                                            RingBuffer *pipe_in,
+                                            RingBuffer *pipe_out);
 
-void encoder_process_state_destroy(EncoderProcessState *state);
+void encoder_config_destroy(EncoderProcessConfig *cfg);
 
-void *start_encoder_process(void *_info);
+void *start_encoder(void *_cfg);
 
 #endif
