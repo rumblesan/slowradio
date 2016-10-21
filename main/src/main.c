@@ -32,13 +32,13 @@ int main (int argc, char *argv[]) {
     filereader_config_create(radio_config->channels,
                              radio_config->filereader.read_size,
                              radio_config->filereader.pattern,
-                             radio_config->filereader.usleep_time,
+                             radio_config->filereader.thread_sleep,
                              fread2stretch);
 
   StretcherProcessConfig *stretcher_cfg =
     stretcher_config_create(radio_config->stretcher.stretch,
                             radio_config->stretcher.window_size,
-                            radio_config->stretcher.usleep_time,
+                            radio_config->stretcher.thread_sleep,
                             radio_config->channels,
                             fread2stretch,
                             stretch2encode);
@@ -48,19 +48,19 @@ int main (int argc, char *argv[]) {
                                  radio_config->encoder.samplerate,
                                  SF_FORMAT_OGG | SF_FORMAT_VORBIS,
                                  radio_config->encoder.quality,
-                                 radio_config->encoder.usleep_time,
+                                 radio_config->encoder.thread_sleep,
                                  stretch2encode, encode2stream);
 
   BroadcastProcessConfig *broadcast_cfg =
-    broadcast_config_create(radio_config->shoutcast.host,
-                            radio_config->shoutcast.port,
-                            radio_config->shoutcast.source,
-                            radio_config->shoutcast.password,
-                            radio_config->shoutcast.mount,
-                            radio_config->shoutcast.name,
-                            radio_config->shoutcast.description,
-                            radio_config->shoutcast.genre,
-                            radio_config->shoutcast.url,
+    broadcast_config_create(radio_config->broadcast.host,
+                            radio_config->broadcast.port,
+                            radio_config->broadcast.source,
+                            radio_config->broadcast.password,
+                            radio_config->broadcast.mount,
+                            radio_config->broadcast.name,
+                            radio_config->broadcast.description,
+                            radio_config->broadcast.genre,
+                            radio_config->broadcast.url,
                             SHOUT_PROTOCOL_HTTP,
                             SHOUT_FORMAT_OGG,
                             encode2stream);

@@ -6,22 +6,22 @@
 typedef struct FileReaderInputCfg {
   bstring pattern;
   int read_size;
-  int usleep_time;
+  int thread_sleep;
 } FileReaderInputCfg;
 
 typedef struct StretcherInputCfg {
   double stretch;
   int window_size;
-  int usleep_time;
+  int thread_sleep;
 } StretcherInputCfg;
 
 typedef struct EncoderInputCfg {
   int samplerate;
-  int usleep_time;
+  int thread_sleep;
   double quality;
 } EncoderInputCfg;
 
-typedef struct ShoutcastInputCfg {
+typedef struct BroadcastInputCfg {
   bstring host;
   int port;
   bstring source;
@@ -31,7 +31,7 @@ typedef struct ShoutcastInputCfg {
   bstring description;
   bstring genre;
   bstring url;
-} ShoutcastInputCfg;
+} BroadcastInputCfg;
 
 typedef struct RadioInputCfg {
 
@@ -41,7 +41,7 @@ typedef struct RadioInputCfg {
   FileReaderInputCfg filereader;
   StretcherInputCfg stretcher;
   EncoderInputCfg encoder;
-  ShoutcastInputCfg shoutcast;
+  BroadcastInputCfg broadcast;
 
 } RadioInputCfg;
 
