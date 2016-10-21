@@ -8,7 +8,7 @@
 #include "filereader_process.h"
 #include "stretcher_process.h"
 #include "encoder_process.h"
-#include "shoutcast.h"
+#include "broadcast_process.h"
 #include "config.h"
 
 #include "bclib/dbg.h"
@@ -51,19 +51,19 @@ int main (int argc, char *argv[]) {
                                  radio_config->encoder.usleep_time,
                                  stretch2encode, encode2stream);
 
-  ShoutCastInfo *sc_info =
-    shoutcast_info_create(radio_config->shoutcast.host,
-                          radio_config->shoutcast.port,
-                          radio_config->shoutcast.source,
-                          radio_config->shoutcast.password,
-                          radio_config->shoutcast.mount,
-                          radio_config->shoutcast.name,
-                          radio_config->shoutcast.description,
-                          radio_config->shoutcast.genre,
-                          radio_config->shoutcast.url,
-                          SHOUT_PROTOCOL_HTTP,
-                          SHOUT_FORMAT_OGG,
-                          encode2stream);
+  BroadcastProcessConfig *broadcast_cfg =
+    broadcast_config_create(radio_config->shoutcast.host,
+                            radio_config->shoutcast.port,
+                            radio_config->shoutcast.source,
+                            radio_config->shoutcast.password,
+                            radio_config->shoutcast.mount,
+                            radio_config->shoutcast.name,
+                            radio_config->shoutcast.description,
+                            radio_config->shoutcast.genre,
+                            radio_config->shoutcast.url,
+                            SHOUT_PROTOCOL_HTTP,
+                            SHOUT_FORMAT_OGG,
+                            encode2stream);
 
   pthread_t reader_thread;
   int rc1 = pthread_create(&reader_thread,
@@ -86,17 +86,17 @@ int main (int argc, char *argv[]) {
                            encoder_process_state);
   check(!rc3, "Error creating File Reader thread");
 
-  pthread_t shout_thread;
-  int rc4 = pthread_create(&shout_thread,
+  pthread_t broadcast_thread;
+  int rc4 = pthread_create(&broadcast_thread,
                            NULL,
-                           &start_shoutcast,
-                           sc_info);
-  check(!rc4, "Error creating File Reader thread");
+                           &start_broadcast,
+                           broadcast_cfg);
+  check(!rc4, "Error creating Broadcasting thread");
 
   pthread_join(reader_thread, NULL);
   pthread_join(stretcher_thread, NULL);
   pthread_join(encoder_thread, NULL);
-  pthread_join(shout_thread, NULL);
+  pthread_join(broadcast_thread, NULL);
   return 0;
  error:
   return 1;

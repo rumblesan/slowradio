@@ -10,7 +10,7 @@ set(SOURCES
   "src/messages.c"
   "src/filechunk.c"
   "src/stretcher_process.c"
-  "src/shoutcast.c"
+  "src/broadcast_process.c"
   "src/util.c"
   )
 
