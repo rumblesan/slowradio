@@ -17,87 +17,116 @@
 
 int main (int argc, char *argv[]) {
 
+  RadioInputCfg *radio_config = NULL;
+
+  RingBuffer *fread2stretch = NULL;
+  RingBuffer *stretch2encode = NULL;
+  RingBuffer *encode2broadcast = NULL;
+
+  FileReaderProcessConfig *filereader_cfg = NULL;
+  StretcherProcessConfig *stretcher_cfg = NULL;
+  EncoderProcessConfig *encoder_cfg = NULL;
+  BroadcastProcessConfig *broadcast_cfg = NULL;
+
+  pthread_t reader_thread;
+  pthread_t stretcher_thread;
+  pthread_t encoder_thread;
+  pthread_t broadcast_thread;
+
   log_info("Hello, Slow Radio");
 
+  check(argc == 2, "Need to give config file path argument");
 
   char *config_path = argv[1];
 
-  RadioInputCfg *radio_config = read_config(config_path);
+  radio_config = read_config(config_path);
+  check(radio_config != NULL, "Could not read config file");
 
-  RingBuffer *fread2stretch = rb_create(100);
-  RingBuffer *stretch2encode = rb_create(100);
-  RingBuffer *encode2stream = rb_create(100);
+  fread2stretch = rb_create(100);
+  check(fread2stretch != NULL, "Couldn't create coms from filereader to stretcher");
+  stretch2encode = rb_create(100);
+  check(stretch2encode != NULL, "Couldn't create coms from stretcher to encoder");
+  encode2broadcast = rb_create(100);
+  check(encode2broadcast != NULL, "Couldn't create coms from encoder to broadcaster");
 
-  FileReaderProcessConfig *filereader_cfg =
-    filereader_config_create(radio_config->channels,
-                             radio_config->filereader.read_size,
-                             radio_config->filereader.pattern,
-                             radio_config->filereader.thread_sleep,
-                             fread2stretch);
+  filereader_cfg = filereader_config_create(radio_config->channels,
+                                            radio_config->filereader.read_size,
+                                            radio_config->filereader.pattern,
+                                            radio_config->filereader.thread_sleep,
+                                            fread2stretch);
+  check(filereader_cfg != NULL, "Couldn't create file reader process config");
 
-  StretcherProcessConfig *stretcher_cfg =
-    stretcher_config_create(radio_config->stretcher.stretch,
-                            radio_config->stretcher.window_size,
-                            radio_config->stretcher.thread_sleep,
-                            radio_config->channels,
-                            fread2stretch,
-                            stretch2encode);
+  stretcher_cfg = stretcher_config_create(radio_config->stretcher.stretch,
+                                          radio_config->stretcher.window_size,
+                                          radio_config->stretcher.thread_sleep,
+                                          radio_config->channels,
+                                          fread2stretch,
+                                          stretch2encode);
+  check(stretcher_cfg != NULL, "Couldn't create stretcher process config");
 
-  EncoderProcessConfig *encoder_cfg =
-    encoder_config_create(radio_config->channels,
-                                 radio_config->encoder.samplerate,
-                                 SF_FORMAT_OGG | SF_FORMAT_VORBIS,
-                                 radio_config->encoder.quality,
-                                 radio_config->encoder.thread_sleep,
-                                 stretch2encode, encode2stream);
+  encoder_cfg = encoder_config_create(radio_config->channels,
+                                      radio_config->encoder.samplerate,
+                                      SF_FORMAT_OGG | SF_FORMAT_VORBIS,
+                                      radio_config->encoder.quality,
+                                      radio_config->encoder.thread_sleep,
+                                      stretch2encode, encode2broadcast);
+  check(encoder_cfg != NULL, "Couldn't create encoder process config");
 
-  BroadcastProcessConfig *broadcast_cfg =
-    broadcast_config_create(radio_config->broadcast.host,
-                            radio_config->broadcast.port,
-                            radio_config->broadcast.source,
-                            radio_config->broadcast.password,
-                            radio_config->broadcast.mount,
-                            radio_config->broadcast.name,
-                            radio_config->broadcast.description,
-                            radio_config->broadcast.genre,
-                            radio_config->broadcast.url,
-                            SHOUT_PROTOCOL_HTTP,
-                            SHOUT_FORMAT_OGG,
-                            encode2stream);
+  broadcast_cfg = broadcast_config_create(radio_config->broadcast.host,
+                                          radio_config->broadcast.port,
+                                          radio_config->broadcast.source,
+                                          radio_config->broadcast.password,
+                                          radio_config->broadcast.mount,
+                                          radio_config->broadcast.name,
+                                          radio_config->broadcast.description,
+                                          radio_config->broadcast.genre,
+                                          radio_config->broadcast.url,
+                                          SHOUT_PROTOCOL_HTTP,
+                                          SHOUT_FORMAT_OGG,
+                                          encode2broadcast);
+  check(broadcast_cfg != NULL, "Couldn't create broadcast process config");
 
-  pthread_t reader_thread;
-  int rc1 = pthread_create(&reader_thread,
-                           NULL,
-                           &start_filereader,
-                           filereader_cfg);
-  check(!rc1, "Error creating File Reader thread");
 
-  pthread_t stretcher_thread;
-  int rc2 = pthread_create(&stretcher_thread,
-                           NULL,
-                           &start_stretcher,
-                           stretcher_cfg);
-  check(!rc2, "Error creating File Reader thread");
+  check(!pthread_create(&reader_thread,
+                        NULL,
+                        &start_filereader,
+                        filereader_cfg),
+        "Error creating file reader thread");
 
-  pthread_t encoder_thread;
-  int rc3 = pthread_create(&encoder_thread,
-                           NULL,
-                           &start_encoder,
-                           encoder_cfg);
-  check(!rc3, "Error creating File Reader thread");
+  check(!pthread_create(&stretcher_thread,
+                        NULL,
+                        &start_stretcher,
+                        stretcher_cfg),
+        "Error creating stretcher thread");
 
-  pthread_t broadcast_thread;
-  int rc4 = pthread_create(&broadcast_thread,
-                           NULL,
-                           &start_broadcast,
-                           broadcast_cfg);
-  check(!rc4, "Error creating Broadcasting thread");
+  check(!pthread_create(&encoder_thread,
+                        NULL,
+                        &start_encoder,
+                        encoder_cfg),
+        "Error creating encoder thread");
+
+  check(!pthread_create(&broadcast_thread,
+                        NULL,
+                        &start_broadcast,
+                        broadcast_cfg),
+        "Error creating broadcasting thread");
 
   pthread_join(reader_thread, NULL);
   pthread_join(stretcher_thread, NULL);
   pthread_join(encoder_thread, NULL);
   pthread_join(broadcast_thread, NULL);
+
   return 0;
  error:
+  // TODO create radio_config_destroy
+  // if (radio_config != NULL) radio_config_destroy(radio_config);
+  if (fread2stretch != NULL) rb_destroy(fread2stretch);
+  if (stretch2encode != NULL) rb_destroy(stretch2encode);
+  if (encode2broadcast != NULL) rb_destroy(encode2broadcast);
+  if (filereader_cfg != NULL) filereader_config_destroy(filereader_cfg);
+  if (stretcher_cfg != NULL) stretcher_config_destroy(stretcher_cfg);
+  if (encoder_cfg != NULL) encoder_config_destroy(encoder_cfg);
+  if (broadcast_cfg != NULL) broadcast_config_destroy(broadcast_cfg);
+
   return 1;
 }
