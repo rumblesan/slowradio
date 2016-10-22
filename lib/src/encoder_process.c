@@ -173,7 +173,7 @@ void *start_encoder(void *_cfg) {
       running = false;
     }
 
-    if (pipes_ready(cfg->pipe_in, cfg->pipe_out)) {
+    if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
       Message *input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Encoder: Could not get input message");
 

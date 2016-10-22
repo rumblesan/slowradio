@@ -11,7 +11,6 @@ set(SOURCES
   "src/broadcast_process.c"
   "src/messages.c"
   "src/filechunk.c"
-  "src/util.c"
   )
 
 add_library(slow ${SOURCES})
