@@ -23,7 +23,7 @@ typedef struct BroadcastProcessConfig {
   int protocol;
   int format;
 
-  RingBuffer *audio;
+  RingBuffer *pipe_in;
 
 } BroadcastProcessConfig;
 
@@ -38,7 +38,7 @@ BroadcastProcessConfig *broadcast_config_create(bstring host,
                                                 bstring url,
                                                 int protocol,
                                                 int format,
-                                                RingBuffer *audio);
+                                                RingBuffer *pipe_in);
 
 void broadcast_config_destroy(BroadcastProcessConfig *cfg);
 

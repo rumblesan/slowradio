@@ -24,7 +24,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
                                                   int thread_sleep,
-                                                  RingBuffer *audio_out) {
+                                                  RingBuffer *pipe_out) {
 
   FileReaderProcessConfig *cfg = malloc(sizeof(FileReaderProcessConfig));
   check_mem(cfg);
@@ -34,8 +34,8 @@ FileReaderProcessConfig *filereader_config_create(int channels,
   cfg->thread_sleep = thread_sleep;
   cfg->pattern      = pattern;
 
-  check(audio_out != NULL, "FileReader: Invalid audio out buffer passed");
-  cfg->audio_out = audio_out;
+  check(pipe_out != NULL, "FileReader: Invalid audio out buffer passed");
+  cfg->pipe_out = pipe_out;
 
   return cfg;
  error:
@@ -138,7 +138,7 @@ void *start_filereader(void *_cfg) {
   int current_section;
 
   while (true) {
-    if (!opened && !rb_full(cfg->audio_out)) {
+    if (!opened && !rb_full(cfg->pipe_out)) {
       log_info("FileReader: Need to open new file");
       bstring newfile = get_random_file(cfg->pattern);
       if (blength(newfile) == 0) {
@@ -169,15 +169,15 @@ void *start_filereader(void *_cfg) {
       out_message = new_track_message(track_info);
       check(out_message != NULL,
             "FileReader: Could not create track info message");
-      rb_push(cfg->audio_out, out_message);
+      rb_push(cfg->pipe_out, out_message);
       bdestroy(newfile);
 
-    } else if (!rb_full(cfg->audio_out)) {
+    } else if (!rb_full(cfg->pipe_out)) {
 
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
 
       if (read_amount == 0) {
-        rb_push(cfg->audio_out, track_finished_message());
+        rb_push(cfg->pipe_out, track_finished_message());
         ov_clear(vf);
         opened = false;
         continue;
@@ -192,7 +192,7 @@ void *start_filereader(void *_cfg) {
       out_message = audio_buffer_message(out_audio);
       check(out_message != NULL,
             "FileReader: Could not create audio array message");
-      rb_push(cfg->audio_out, out_message);
+      rb_push(cfg->pipe_out, out_message);
       out_message = NULL;
       out_audio = NULL;
 
@@ -203,8 +203,8 @@ void *start_filereader(void *_cfg) {
   }
 
   while (true) {
-    if (!rb_full(cfg->audio_out)) {
-      rb_push(cfg->audio_out, stream_finished_message());
+    if (!rb_full(cfg->pipe_out)) {
+      rb_push(cfg->pipe_out, stream_finished_message());
       break;
     } else {
       sched_yield();

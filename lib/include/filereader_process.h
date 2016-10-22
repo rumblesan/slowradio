@@ -15,7 +15,7 @@ typedef struct FileReaderProcessConfig {
 
   bstring pattern;
 
-  RingBuffer *audio_out;
+  RingBuffer *pipe_out;
 
 } FileReaderProcessConfig;
 
@@ -23,7 +23,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
                                                   int thread_sleep,
-                                                  RingBuffer *audio_out);
+                                                  RingBuffer *pipe_out);
 
 void filereader_config_destroy(FileReaderProcessConfig *cfg);
 

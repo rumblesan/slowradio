@@ -25,7 +25,7 @@ BroadcastProcessConfig *broadcast_config_create(bstring host,
                                                 bstring url,
                                                 int protocol,
                                                 int format,
-                                                RingBuffer *audio
+                                                RingBuffer *pipe_in
                                                 ) {
 
   BroadcastProcessConfig *cfg = malloc(sizeof(BroadcastProcessConfig));
@@ -56,8 +56,8 @@ BroadcastProcessConfig *broadcast_config_create(bstring host,
   cfg->protocol = protocol;
   cfg->format   = format;
 
-  check(audio != NULL, "Broadcast: Invalid audio ring buffer passed");
-  cfg->audio = audio;
+  check(pipe_in != NULL, "Broadcast: Invalid pipe in");
+  cfg->pipe_in = pipe_in;
 
   return cfg;
  error:
@@ -96,11 +96,11 @@ void *start_broadcast(void *_cfg) {
 
   int startup_wait = 2;
   while (1) {
-    if (!rb_empty(cfg->audio)) {
-      log_info("Broadcast: Audio available.");
+    if (!rb_empty(cfg->pipe_in)) {
+      log_info("Broadcast: Input ready");
       break;
     } else {
-      log_info("Broadcast: Waiting for input audio...");
+      log_info("Broadcast: Waiting for input...");
       sleep(startup_wait);
     }
   }
@@ -151,7 +151,7 @@ void *start_broadcast(void *_cfg) {
 
   log_info("Broadcast: Connected to server...");
   while (true) {
-    input_msg = rb_pop(cfg->audio);
+    input_msg = rb_pop(cfg->pipe_in);
     check(input_msg != NULL, "Broadcast: Could not get input message");
     if (input_msg->type == STREAMFINISHED) {
       log_info("Broadcast: Finished message received");
