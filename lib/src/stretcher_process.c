@@ -57,17 +57,6 @@ void *start_stretcher(void *_cfg) {
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
-  int startup_wait = 1;
-  while (true) {
-    if (!rb_empty(cfg->pipe_in)) {
-      log_info("Stretcher: Audio available");
-      break;
-    } else {
-      log_info("Stretcher: Waiting for input audio...");
-      sleep(startup_wait);
-    }
-  }
-
   log_info("Stretcher: Starting");
   while (true) {
     if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {

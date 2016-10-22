@@ -165,9 +165,6 @@ void *start_encoder(void *_cfg) {
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
-  log_info("Encoder: Waiting for input");
-  check(wait_for_input(cfg->pipe_in, 1, 60), "Encoder: Could not get input in time");
-
   log_info("Encoder: Starting");
   bool running = true;
   while (running) {
