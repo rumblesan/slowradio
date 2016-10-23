@@ -9,8 +9,6 @@
 #include "filechunk.h"
 #include "messages.h"
 
-#include "util.h"
-
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
