@@ -5,6 +5,7 @@
 #include "ogg_encoder.h"
 #include "filechunk.h"
 #include "messages.h"
+#include "logging.h"
 #include "pstretch/audiobuffer.h"
 
 #include "bclib/dbg.h"
@@ -116,7 +117,7 @@ int write_audio(OggEncoderState *encoder, FileChunk *chunk) {
            it here (to show that vorbis does know where the stream ends) */
 
         if(ogg_page_eos(&new_page)) {
-          log_info("Finished");
+          logger("Ogg Encoder", "Finished");
           finished = 1;
         }
       }

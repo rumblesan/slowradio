@@ -8,6 +8,7 @@
 #include "ogg_encoder.h"
 #include "filechunk.h"
 #include "messages.h"
+#include "logging.h"
 
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
@@ -47,9 +48,8 @@ void encoder_config_destroy(EncoderProcessConfig *cfg) {
 EncoderState waiting_for_file_state(EncoderProcessConfig *cfg, OggEncoderState **encoderP, Message *input_msg) {
 
   if (input_msg->type == NEWTRACK) {
-    log_info("Encoder: New Track received");
+    logger("Encoder", "New Track received. Creating new encoder");
 
-    log_info("Encoder: Creating new encoder");
     OggEncoderState *new_encoder = ogg_encoder_state(cfg->channels, cfg->samplerate, cfg->quality);
     check(new_encoder != NULL, "Could not create new encoder state");
     *encoderP = new_encoder;
@@ -68,13 +68,14 @@ EncoderState waiting_for_file_state(EncoderProcessConfig *cfg, OggEncoderState *
     rb_push(cfg->pipe_out, output_msg);
 
     message_destroy(input_msg);
+    logger("Encoder", "Changing to encoding state");
     return ENCODINGFILE;
   } else if (input_msg->type == STREAMFINISHED) {
-    log_info("Encoder: Stream Finished message received");
+    logger("Encoder", "Stream Finished message received");
     message_destroy(input_msg);
     return CLOSINGSTREAM;
   } else {
-    log_err("Encoder: Received message of type %s but waiting for new track", msg_type(input_msg));
+    err_logger("Encoder", "Received message of type %s but waiting for new track", msg_type(input_msg));
     message_destroy(input_msg);
     return ENCODERERROR;
   }
@@ -111,11 +112,11 @@ EncoderState encoding_file_state(EncoderProcessConfig *cfg, OggEncoderState **en
     return ENCODINGFILE;
 
   } else if (input_msg->type == STREAMFINISHED) {
-    log_info("Encoder: Stream Finished message received");
+    logger("Encoder", "Stream Finished message received");
     message_destroy(input_msg);
     return CLOSINGSTREAM;
   } else if (input_msg->type == TRACKFINISHED) {
-    log_info("Encoder: Track Finished message received");
+    logger("Encoder", "Track Finished message received");
 
     // We need to make sure the ogg stream is emptied
     file_finished(encoder);
@@ -138,9 +139,10 @@ EncoderState encoding_file_state(EncoderProcessConfig *cfg, OggEncoderState **en
     cleanup_encoder(encoder);
     *encoderP = NULL;
     message_destroy(input_msg);
+    logger("Encoder", "Changing to waiting for file state");
     return WAITINGFORFILE;
   } else {
-    log_err("Encoder: Received invalid %s message whilst in encoding state",
+    err_logger("Encoder", "Received invalid %s message whilst in encoding state",
             msg_type(input_msg));
     message_destroy(input_msg);
     return ENCODERERROR;
@@ -163,7 +165,7 @@ void *start_encoder(void *_cfg) {
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
-  log_info("Encoder: Starting");
+  logger("Encoder", "Starting");
   bool running = true;
   while (running) {
 
@@ -208,9 +210,9 @@ void *start_encoder(void *_cfg) {
   }
 
  error:
-  log_info("Encoder: Finished");
+  logger("Encoder", "Finished");
   if (cfg != NULL) encoder_config_destroy(cfg);
   if (encoder != NULL) cleanup_encoder(encoder);
-  log_info("Encoder: Cleaned up");
+  logger("Encoder", "Cleaned up");
   return NULL;
 }

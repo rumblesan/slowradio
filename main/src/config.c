@@ -4,6 +4,7 @@
 
 #include "config.h"
 
+#include "logging.h"
 #include "bclib/dbg.h"
 
 int config_setting_lookup_bstring(const config_setting_t *setting,
@@ -16,7 +17,7 @@ int config_setting_lookup_bstring(const config_setting_t *setting,
 }
 
 RadioInputCfg *read_config(char *config_path) {
-  log_info("config path %s", config_path);
+  logger("Config", "config path %s", config_path);
   config_t config;
   config_t *cfg = &config;
 

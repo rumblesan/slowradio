@@ -10,6 +10,7 @@
 #include "encoder_process.h"
 #include "broadcast_process.h"
 #include "config.h"
+#include "logging.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -33,7 +34,7 @@ int main (int argc, char *argv[]) {
   pthread_t encoder_thread;
   pthread_t broadcast_thread;
 
-  log_info("Hello, Slow Radio");
+  logger("SlowRadio", "Hello, Slow Radio");
 
   check(argc == 2, "Need to give config file path argument");
 
@@ -118,6 +119,7 @@ int main (int argc, char *argv[]) {
 
   return 0;
  error:
+  logger("SlowRadio", "Cleaning up");
   // TODO create radio_config_destroy
   // if (radio_config != NULL) radio_config_destroy(radio_config);
   if (fread2stretch != NULL) rb_destroy(fread2stretch);

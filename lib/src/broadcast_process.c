@@ -9,6 +9,7 @@
 #include "broadcast_process.h"
 
 #include "messages.h"
+#include "logging.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
@@ -87,7 +88,7 @@ void broadcast_config_destroy(BroadcastProcessConfig *cfg) {
   free(cfg);
   return;
  error:
-  log_err("Broadcast: Could not destroy cfg");
+  err_logger("Broadcast", "Could not destroy cfg");
 }
 
 void *start_broadcast(void *_cfg) {
@@ -97,10 +98,10 @@ void *start_broadcast(void *_cfg) {
   int startup_wait = 2;
   while (1) {
     if (!rb_empty(cfg->pipe_in)) {
-      log_info("Broadcast: Input ready");
+      logger("Broadcast", "Input ready");
       break;
     } else {
-      log_info("Broadcast: Waiting for input...");
+      logger("Broadcast", " Waiting for input...");
       sleep(startup_wait);
     }
   }
@@ -149,12 +150,12 @@ void *start_broadcast(void *_cfg) {
   Message *input_msg;
   FileChunk *input_audio;
 
-  log_info("Broadcast: Connected to server...");
+  logger("Broadcast", "Connected to server...");
   while (true) {
     input_msg = rb_pop(cfg->pipe_in);
     check(input_msg != NULL, "Broadcast: Could not get input message");
     if (input_msg->type == STREAMFINISHED) {
-      log_info("Broadcast: Finished message received");
+      logger("Broadcast", "Finished message received");
       message_destroy(input_msg);
       break;
     } else if (input_msg->type == FILECHUNK) {
@@ -164,20 +165,20 @@ void *start_broadcast(void *_cfg) {
             "Broadcast: Send error: %s", shout_get_error(shout));
       message_destroy(input_msg);
     } else {
-      log_err("Broadcast: Received invalid message of type %d", input_msg->type);
+      err_logger("Broadcast", "Received invalid message of type %d", input_msg->type);
       message_destroy(input_msg);
     }
     shout_sync(shout);
   }
 
  error:
-  log_info("Broadcast: Finished");
+  logger("Broadcast", "Finished");
   if (shout) {
     shout_close(shout);
     shout_shutdown();
   }
   broadcast_config_destroy(cfg);
-  log_info("Broadcast: Cleaned up");
+  logger("Broadcast", "Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

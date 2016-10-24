@@ -8,6 +8,7 @@
 #include "stretcher_process.h"
 
 #include "messages.h"
+#include "logging.h"
 
 #include "pstretch/pstretch.h"
 #include "bclib/dbg.h"
@@ -57,14 +58,14 @@ void *start_stretcher(void *_cfg) {
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
-  log_info("Stretcher: Starting");
+  logger("Stretcher", "Starting");
   while (true) {
     if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
       input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
 
       if (input_msg->type == STREAMFINISHED) {
-        log_info("Stretcher: Stream Finished message received");
+        logger("Stretcher", "Stream Finished message received");
         message_destroy(input_msg);
         input_msg = NULL;
         break;
@@ -77,10 +78,10 @@ void *start_stretcher(void *_cfg) {
                  input_msg->type == NEWTRACK ||
                  input_msg->type == TRACKFINISHED
                  ) {
-        log_info("Passing message through");
+        logger("Stretcher", "Passing message through");
         rb_push(cfg->pipe_out, input_msg);
       } else {
-        log_err("Stretcher: Received invalid message of type %d", input_msg->type);
+        err_logger("Stretcher", "Received invalid message of type %d", input_msg->type);
         message_destroy(input_msg);
         input_msg = NULL;
       }
@@ -116,14 +117,14 @@ void *start_stretcher(void *_cfg) {
   }
 
  error:
-  log_info("Stretcher: Finished");
+  logger("Stretcher", "Finished");
   if (input_msg != NULL) message_destroy(input_msg);
   if (windowed != NULL) audio_buffer_destroy(windowed);
   if (stretched != NULL) audio_buffer_destroy(stretched);
   if (output_msg != NULL) message_destroy(output_msg);
   if (stretch != NULL) stretch_destroy(stretch);
   if (cfg != NULL) stretcher_config_destroy(cfg);
-  log_info("Stretcher: Cleaned up");
+  logger("Stretcher", "Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }

@@ -14,6 +14,7 @@
 
 #include "filereader_process.h"
 #include "messages.h"
+#include "logging.h"
 
 #include "bclib/dbg.h"
 #include "bclib/list.h"
@@ -134,31 +135,31 @@ void *start_filereader(void *_cfg) {
     check_mem(oggiob[c]);
   }
 
-  log_info("FileReader: Starting");
+  logger("FileReader", "Starting");
   int current_section;
 
   while (true) {
     if (!opened && !rb_full(cfg->pipe_out)) {
-      log_info("FileReader: Need to open new file");
+      logger("FileReader", "Need to open new file");
       bstring newfile = get_random_file(cfg->pattern);
       if (blength(newfile) == 0) {
-        log_err("FileReader: Could not get random file");
+        err_logger("FileReader", "Could not get random file");
         continue;
       }
-      log_info("FileReader: New file: %s", bdata(newfile));
+      logger("FileReader", "New file: %s", bdata(newfile));
       vf = malloc(sizeof(OggVorbis_File));
       check_mem(vf);
 
       int ovopen_err = ov_fopen(bdata(newfile), vf);
       if (ovopen_err) {
-        log_err("FileReader: Could not open input file. Trying another");
+        err_logger("FileReader", "Could not open input file. Trying another");
         opened = false;
         free(vf);
         vf = NULL;
         continue;
       }
       if(ov_channels(vf) != cfg->channels) {
-        log_err("FileReader: Only accepting files with %d channels", cfg->channels);
+        err_logger("FileReader", "Only accepting files with %d channels", cfg->channels);
         ov_clear(vf);
         free(vf);
         vf = NULL;
@@ -213,7 +214,7 @@ void *start_filereader(void *_cfg) {
   }
 
  error:
-  log_info("FileReader: Finished");
+  logger("FileReader", "Finished");
   if (cfg != NULL) filereader_config_destroy(cfg);
   if (oggiob != NULL) {
     if (oggiob[0] != NULL) free(oggiob[0]);
@@ -221,7 +222,7 @@ void *start_filereader(void *_cfg) {
     free(oggiob);
   }
   if (vf != NULL) free(vf);
-  log_info("FileReader: Cleaned up");
+  logger("FileReader", "Cleaned up");
   pthread_exit(NULL);
   return NULL;
 }
