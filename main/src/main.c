@@ -34,7 +34,7 @@ int main (int argc, char *argv[]) {
   pthread_t encoder_thread;
   pthread_t broadcast_thread;
 
-  logger("SlowRadio", "Hello, Slow Radio");
+  startup_log("SlowRadio", "Hello, Slow Radio");
 
   check(argc == 2, "Need to give config file path argument");
 
