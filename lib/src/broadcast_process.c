@@ -109,6 +109,7 @@ void *start_broadcast(void *_cfg) {
       logger("Broadcast",
              "Waiting for input. Only %d messages in pipe",
              rb_size(cfg->pipe_in));
+      sched_yield();
       sleep(startup_wait);
     }
   }
@@ -160,9 +161,9 @@ void *start_broadcast(void *_cfg) {
   logger("Broadcast", "Connected to server...");
   while (true) {
     input_msg = rb_pop(cfg->pipe_in);
-    logger("Broadcast", "%d messages in pipe", rb_size(cfg->pipe_in));
     if (input_msg == NULL) {
       err_logger("Broadcast", "Could not get input message");
+      sched_yield();
       continue;
     }
     if (input_msg->type == STREAMFINISHED) {
@@ -179,6 +180,7 @@ void *start_broadcast(void *_cfg) {
       err_logger("Broadcast", "Received invalid message of type %d", input_msg->type);
       message_destroy(input_msg);
     }
+    sched_yield();
     shout_sync(shout);
   }
 
