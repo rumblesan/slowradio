@@ -102,11 +102,13 @@ void *start_broadcast(void *_cfg) {
 
   int startup_wait = 2;
   while (1) {
-    if (!rb_empty(cfg->pipe_in)) {
+    if (rb_size(cfg->pipe_in) > 50) {
       logger("Broadcast", "Input ready");
       break;
     } else {
-      logger("Broadcast", " Waiting for input...");
+      logger("Broadcast",
+             "Waiting for input. Only %d messages in pipe",
+             rb_size(cfg->pipe_in));
       sleep(startup_wait);
     }
   }
@@ -158,7 +160,11 @@ void *start_broadcast(void *_cfg) {
   logger("Broadcast", "Connected to server...");
   while (true) {
     input_msg = rb_pop(cfg->pipe_in);
-    check(input_msg != NULL, "Broadcast: Could not get input message");
+    logger("Broadcast", "%d messages in pipe", rb_size(cfg->pipe_in));
+    if (input_msg == NULL) {
+      err_logger("Broadcast", "Could not get input message");
+      continue;
+    }
     if (input_msg->type == STREAMFINISHED) {
       logger("Broadcast", "Finished message received");
       message_destroy(input_msg);
