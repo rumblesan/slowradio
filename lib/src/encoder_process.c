@@ -199,16 +199,6 @@ void *start_encoder(void *_cfg) {
 
   }
 
-  while (true) {
-    if (!rb_full(cfg->pipe_out)) {
-      rb_push(cfg->pipe_out, stream_finished_message());
-      break;
-    } else {
-      sched_yield();
-      nanosleep(&tim, &tim2);
-    }
-  }
-
  error:
   logger("Encoder", "Finished");
   if (cfg != NULL) encoder_config_destroy(cfg);

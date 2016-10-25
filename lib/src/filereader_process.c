@@ -203,16 +203,6 @@ void *start_filereader(void *_cfg) {
     }
   }
 
-  while (true) {
-    if (!rb_full(cfg->pipe_out)) {
-      rb_push(cfg->pipe_out, stream_finished_message());
-      break;
-    } else {
-      sched_yield();
-      nanosleep(&tim, &tim2);
-    }
-  }
-
  error:
   logger("FileReader", "Finished");
   if (cfg != NULL) filereader_config_destroy(cfg);
