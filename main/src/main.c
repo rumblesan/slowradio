@@ -33,6 +33,7 @@ int main (int argc, char *argv[]) {
   pthread_t stretcher_thread;
   pthread_t encoder_thread;
   pthread_t broadcast_thread;
+  int broadcast_status = 0;
 
   startup_log("SlowRadio", "Hello, Slow Radio");
 
@@ -84,6 +85,7 @@ int main (int argc, char *argv[]) {
                                           radio_config->broadcast.url,
                                           SHOUT_PROTOCOL_HTTP,
                                           SHOUT_FORMAT_OGG,
+                                          &broadcast_status,
                                           encode2broadcast);
   check(broadcast_cfg != NULL, "Couldn't create broadcast process config");
 
@@ -112,10 +114,21 @@ int main (int argc, char *argv[]) {
                         broadcast_cfg),
         "Error creating broadcasting thread");
 
-  pthread_join(reader_thread, NULL);
-  pthread_join(stretcher_thread, NULL);
-  pthread_join(encoder_thread, NULL);
-  pthread_join(broadcast_thread, NULL);
+  int rd2st_msgs = 0;
+  int st2enc_msgs = 0;
+  int enc2brd_msgs = 0;
+  while (1) {
+    sleep(30);
+    if (broadcast_status != 0) {
+      rd2st_msgs = rb_size(fread2stretch);
+      st2enc_msgs = rb_size(stretch2encode);
+      enc2brd_msgs = rb_size(encode2broadcast);
+      logger("SlowRadio", "Messages: reader %d stretcher %d encoder %d broadcast", rd2st_msgs, st2enc_msgs, enc2brd_msgs);
+    } else {
+      err_logger("SlowRadio", "Stopped Broadcasting!");
+      break;
+    }
+  }
 
   return 0;
  error:

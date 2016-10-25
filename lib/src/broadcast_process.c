@@ -26,6 +26,7 @@ BroadcastProcessConfig *broadcast_config_create(bstring host,
                                                 bstring url,
                                                 int protocol,
                                                 int format,
+                                                int *status_var,
                                                 RingBuffer *pipe_in
                                                 ) {
 
@@ -56,6 +57,8 @@ BroadcastProcessConfig *broadcast_config_create(bstring host,
 
   cfg->protocol = protocol;
   cfg->format   = format;
+
+  cfg->status_var = status_var;
 
   check(pipe_in != NULL, "Broadcast: Invalid pipe in");
   cfg->pipe_in = pipe_in;
@@ -94,6 +97,8 @@ void broadcast_config_destroy(BroadcastProcessConfig *cfg) {
 void *start_broadcast(void *_cfg) {
 
   BroadcastProcessConfig *cfg = _cfg;
+
+  *(cfg->status_var) = 1;
 
   int startup_wait = 2;
   while (1) {
@@ -173,6 +178,7 @@ void *start_broadcast(void *_cfg) {
 
  error:
   logger("Broadcast", "Finished");
+  *(cfg->status_var) = 1;
   if (shout) {
     shout_close(shout);
     shout_shutdown();
