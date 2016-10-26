@@ -98,24 +98,13 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
 }
 
 FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File *vf) {
-  int size = cfg->read_size;
-  int channels = cfg->channels;
-  int pc_size = size / channels;
-  int pc_read = 0;
-
-  int current_section;
 
   AudioBuffer *out_audio = NULL;
-  Message *out_message = NULL;
+  Message *out_message   = NULL;
 
-  float **oggiob = NULL;
-  oggiob = malloc(channels * sizeof(float *));
-  check_mem(oggiob);
-  for (int c = 0; c < channels; c += 1) {
-    oggiob[c] = malloc(pc_size * sizeof(float));
-    check_mem(oggiob[c]);
-  }
-  long read_amount = ov_read_float(vf, &oggiob, size, &current_section);
+  float **oggiob;
+
+  long read_amount = ov_read_float(vf, &oggiob, cfg->read_size, NULL);
 
   if (read_amount == 0) {
     rb_push(cfg->pipe_out, track_finished_message());
@@ -123,11 +112,11 @@ FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File *vf)
     return NOFILEOPENED;
   }
 
-  pc_read = read_amount / channels;
-  out_audio = audio_buffer_create(channels, pc_read);
+  out_audio = audio_buffer_create(cfg->channels, read_amount);
   check(out_audio != NULL, "FileReader: Could not create Audio Buffer");
-  for (int c = 0; c < channels; c += 1) {
-    memcpy(out_audio->buffers[c], oggiob[c], pc_read * sizeof(float));
+
+  for (int c = 0; c < cfg->channels; c += 1) {
+    memcpy(out_audio->buffers[c], oggiob[c], read_amount * sizeof(float));
   }
   out_message = audio_buffer_message(out_audio);
   check(out_message != NULL,
