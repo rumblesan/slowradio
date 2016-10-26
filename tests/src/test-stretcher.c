@@ -52,10 +52,10 @@ char *test_stretcher_loop() {
   Message *output_msg = NULL;
 
 
-  StretcherProcessConfig *s = stretcher_config_create(stretch,
+  StretcherProcessConfig *s = stretcher_config_create(channels,
                                                       window_size,
+                                                      stretch,
                                                       thread_sleep,
-                                                      channels,
                                                       max_push_msgs,
                                                       pipe_in,
                                                       pipe_out);
