@@ -114,6 +114,10 @@ void *start_broadcast(void *_cfg) {
     }
   }
 
+  struct timespec tim, tim2;
+  tim.tv_sec = 0;
+  tim.tv_nsec = 10;
+
   shout_init();
 
   shout_t *shout = shout_new();
@@ -163,6 +167,7 @@ void *start_broadcast(void *_cfg) {
     input_msg = rb_pop(cfg->pipe_in);
     if (input_msg == NULL) {
       err_logger("Broadcast", "Could not get input message");
+      nanosleep(&tim, &tim2);
       sched_yield();
       continue;
     }
