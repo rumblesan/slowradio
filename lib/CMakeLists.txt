@@ -11,6 +11,8 @@ set(SOURCES
   "src/broadcast_process.c"
   "src/messages.c"
   "src/filechunk.c"
+  "src/file_utils.c"
+  "src/ogg_utils.c"
   "src/logging.c"
   )
 
