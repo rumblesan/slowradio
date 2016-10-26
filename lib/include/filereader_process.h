@@ -4,6 +4,12 @@
 #include "bclib/bstrlib.h"
 #include "bclib/ringbuffer.h"
 
+typedef enum {
+  NOFILEOPENED,
+  READINGFILE,
+  FILEREADERERROR,
+} FileReaderState;
+
 
 typedef struct FileReaderProcessConfig {
 

@@ -178,6 +178,8 @@ void *start_encoder(void *_cfg) {
     }
 
     if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
+      pushed_msgs += 1;
+
       Message *input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Encoder: Could not get input message");
 

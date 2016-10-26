@@ -48,26 +48,108 @@ void filereader_config_destroy(FileReaderProcessConfig *cfg) {
   free(cfg);
 }
 
-void *start_filereader(void *_cfg) {
-  FileReaderProcessConfig *cfg = _cfg;
+FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
 
-  OggVorbis_File *vf = NULL;
-  bool opened = false;
-
-  float **oggiob = NULL;
-  AudioBuffer *out_audio = NULL;
-  Message *out_message = NULL;
-  long read_amount = 0;
+  logger("FileReader", "Need to open new file");
   TrackInfo *track_info = NULL;
+  Message *out_message = NULL;
+  OggVorbis_File *new_vf = NULL;
 
-  srand(time(NULL));
+  bool opened = false;
+  while (!opened) {
+    bstring newfile = get_random_file(cfg->pattern);
 
-  check(cfg != NULL, "FileReader: Invalid info data passed");
+    if (blength(newfile) == 0) {
+      err_logger("FileReader", "Could not get random file");
+      continue;
+    }
 
+    logger("FileReader", "New file: %s", bdata(newfile));
+    new_vf = malloc(sizeof(OggVorbis_File));
+    check_mem(new_vf);
+
+    int ovopen_err = ov_fopen(bdata(newfile), new_vf);
+    if (ovopen_err) {
+      err_logger("FileReader", "Could not open input file. Trying another");
+      free(new_vf);
+      new_vf = NULL;
+      continue;
+    }
+
+    if(ov_channels(new_vf) != cfg->channels) {
+      err_logger("FileReader", "Only accepting files with %d channels", cfg->channels);
+      ov_clear(new_vf);
+      free(new_vf);
+      continue;
+    }
+
+    opened = true;
+    track_info = get_track_info(new_vf);
+    out_message = new_track_message(track_info);
+    check(out_message != NULL,
+          "FileReader: Could not create track info message");
+    rb_push(cfg->pipe_out, out_message);
+    bdestroy(newfile);
+  }
+  *vf = new_vf;
+  return READINGFILE;
+ error:
+  return FILEREADERERROR;
+}
+
+FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File *vf) {
   int size = cfg->read_size;
   int channels = cfg->channels;
   int pc_size = size / channels;
   int pc_read = 0;
+
+  int current_section;
+
+  AudioBuffer *out_audio = NULL;
+  Message *out_message = NULL;
+
+  float **oggiob = NULL;
+  oggiob = malloc(channels * sizeof(float *));
+  check_mem(oggiob);
+  for (int c = 0; c < channels; c += 1) {
+    oggiob[c] = malloc(pc_size * sizeof(float));
+    check_mem(oggiob[c]);
+  }
+  long read_amount = ov_read_float(vf, &oggiob, size, &current_section);
+
+  if (read_amount == 0) {
+    rb_push(cfg->pipe_out, track_finished_message());
+    ov_clear(vf);
+    return NOFILEOPENED;
+  }
+
+  pc_read = read_amount / channels;
+  out_audio = audio_buffer_create(channels, pc_read);
+  check(out_audio != NULL, "FileReader: Could not create Audio Buffer");
+  for (int c = 0; c < channels; c += 1) {
+    memcpy(out_audio->buffers[c], oggiob[c], pc_read * sizeof(float));
+  }
+  out_message = audio_buffer_message(out_audio);
+  check(out_message != NULL,
+        "FileReader: Could not create audio array message");
+  rb_push(cfg->pipe_out, out_message);
+  out_message = NULL;
+  out_audio = NULL;
+
+  return READINGFILE;
+ error:
+  return FILEREADERERROR;
+}
+
+
+void *start_filereader(void *_cfg) {
+  FileReaderProcessConfig *cfg = _cfg;
+
+  OggVorbis_File *vf = NULL;
+
+  srand(time(NULL));
+
+  check(cfg != NULL, "FileReader: Invalid info data passed");
 
   int pushed_msgs = 0;
 
@@ -75,91 +157,39 @@ void *start_filereader(void *_cfg) {
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
-  oggiob = malloc(channels * sizeof(float *));
-  check_mem(oggiob);
-  for (int c = 0; c < channels; c += 1) {
-    oggiob[c] = malloc(pc_size * sizeof(float));
-    check_mem(oggiob[c]);
-  }
-
   logger("FileReader", "Starting");
-  int current_section;
+  FileReaderState state = NOFILEOPENED;
+  bool running = true;
+  while (running) {
 
-  while (true) {
-    if (!opened && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
+    if (state == FILEREADERERROR) {
+      running = false;
+    } else if (!rb_full(cfg->pipe_out) && (pushed_msgs < cfg->max_push_msgs)) {
       pushed_msgs += 1;
-      logger("FileReader", "Need to open new file");
-      bstring newfile = get_random_file(cfg->pattern);
-      if (blength(newfile) == 0) {
-        err_logger("FileReader", "Could not get random file");
-        continue;
-      }
-      logger("FileReader", "New file: %s", bdata(newfile));
-      vf = malloc(sizeof(OggVorbis_File));
-      check_mem(vf);
 
-      int ovopen_err = ov_fopen(bdata(newfile), vf);
-      if (ovopen_err) {
-        err_logger("FileReader", "Could not open input file. Trying another");
-        opened = false;
-        free(vf);
-        vf = NULL;
-        continue;
+      switch (state) {
+      case NOFILEOPENED:
+        state = open_file(cfg, &(vf));
+        break;
+      case READINGFILE:
+        state = read_file_data(cfg, vf);
+        break;
+      case FILEREADERERROR:
+        break;
+        running = false;
       }
-      if(ov_channels(vf) != cfg->channels) {
-        err_logger("FileReader", "Only accepting files with %d channels", cfg->channels);
-        ov_clear(vf);
-        free(vf);
-        vf = NULL;
-        continue;
-      }
-      opened = true;
-      track_info = get_track_info(vf);
-      out_message = new_track_message(track_info);
-      check(out_message != NULL,
-            "FileReader: Could not create track info message");
-      rb_push(cfg->pipe_out, out_message);
-      bdestroy(newfile);
-
-    } else if (!rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
-
-      read_amount = ov_read_float(vf, &oggiob, size, &current_section);
-
-      if (read_amount == 0) {
-        rb_push(cfg->pipe_out, track_finished_message());
-        ov_clear(vf);
-        opened = false;
-        continue;
-      }
-
-      pc_read = read_amount / channels;
-      out_audio = audio_buffer_create(channels, pc_read);
-      check(out_audio != NULL, "FileReader: Could not create Audio Buffer");
-      for (int c = 0; c < channels; c += 1) {
-        memcpy(out_audio->buffers[c], oggiob[c], pc_read * sizeof(float));
-      }
-      out_message = audio_buffer_message(out_audio);
-      check(out_message != NULL,
-            "FileReader: Could not create audio array message");
-      rb_push(cfg->pipe_out, out_message);
-      out_message = NULL;
-      out_audio = NULL;
 
     } else {
       pushed_msgs = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }
+
   }
 
  error:
   logger("FileReader", "Finished");
   if (cfg != NULL) filereader_config_destroy(cfg);
-  if (oggiob != NULL) {
-    if (oggiob[0] != NULL) free(oggiob[0]);
-    if (oggiob[1] != NULL) free(oggiob[1]);
-    free(oggiob);
-  }
   if (vf != NULL) free(vf);
   logger("FileReader", "Cleaned up");
   pthread_exit(NULL);
