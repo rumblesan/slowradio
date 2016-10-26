@@ -5,26 +5,24 @@
 
 typedef struct StretcherProcessConfig {
 
-  RingBuffer *pipe_in;
-
-  RingBuffer *pipe_out;
-
+  int channels;
   int window;
-
-  int thread_sleep;
-
   float stretch;
 
-  int channels;
+  int thread_sleep;
+  int max_push_msgs;
+  RingBuffer *pipe_in;
+  RingBuffer *pipe_out;
 
 } StretcherProcessConfig;
 
-StretcherProcessConfig *stretcher_config_create(float stretch,
-                                         int window_size,
-                                         int thread_sleep,
-                                         int channels,
-                                         RingBuffer *pipe_in,
-                                         RingBuffer *pipe_out);
+StretcherProcessConfig *stretcher_config_create(int channels,
+                                                int window_size,
+                                                float stretch,
+                                                int thread_sleep,
+                                                int max_push_msgs,
+                                                RingBuffer *pipe_in,
+                                                RingBuffer *pipe_out);
 
 void stretcher_config_destroy(StretcherProcessConfig *cfg);
 

@@ -51,10 +51,13 @@ int main (int argc, char *argv[]) {
   encode2broadcast = rb_create(100);
   check(encode2broadcast != NULL, "Couldn't create coms from encoder to broadcaster");
 
+  int max_push_msgs = 10;
+
   filereader_cfg = filereader_config_create(radio_config->channels,
                                             radio_config->filereader.read_size,
                                             radio_config->filereader.pattern,
                                             radio_config->filereader.thread_sleep,
+                                            max_push_msgs,
                                             fread2stretch);
   check(filereader_cfg != NULL, "Couldn't create file reader process config");
 
@@ -62,6 +65,7 @@ int main (int argc, char *argv[]) {
                                           radio_config->stretcher.window_size,
                                           radio_config->stretcher.thread_sleep,
                                           radio_config->channels,
+                                          max_push_msgs,
                                           fread2stretch,
                                           stretch2encode);
   check(stretcher_cfg != NULL, "Couldn't create stretcher process config");
@@ -71,6 +75,7 @@ int main (int argc, char *argv[]) {
                                       SF_FORMAT_OGG | SF_FORMAT_VORBIS,
                                       radio_config->encoder.quality,
                                       radio_config->encoder.thread_sleep,
+                                      max_push_msgs,
                                       stretch2encode, encode2broadcast);
   check(encoder_cfg != NULL, "Couldn't create encoder process config");
 

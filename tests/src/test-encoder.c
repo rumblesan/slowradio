@@ -13,6 +13,7 @@ char *test_encoder_config_create() {
   int samplerate = 44100;
   int format = 1;
   double quality = 0.7;
+  int max_push_msgs = 10;
   int thread_sleep = 20;
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
@@ -22,6 +23,7 @@ char *test_encoder_config_create() {
                                                     format,
                                                     quality,
                                                     thread_sleep,
+                                                    max_push_msgs,
                                                     pipe_in,
                                                     pipe_out);
 
@@ -38,6 +40,7 @@ char *test_encoder_loop() {
   int samplerate = 44100;
   int format = 1;
   double quality = 0.7;
+  int max_push_msgs = 10;
   int thread_sleep = 20;
   int maxmsgs = 5000;
   int read_size = 2048;
@@ -55,6 +58,7 @@ char *test_encoder_loop() {
                                                     format,
                                                     quality,
                                                     thread_sleep,
+                                                    max_push_msgs,
                                                     pipe_in,
                                                     pipe_out);
 
@@ -90,6 +94,7 @@ char *test_multi_loop() {
   int format = 1;
   double quality = 0.7;
   int thread_sleep = 20;
+  int max_push_msgs = 10;
   int tracks = 3;
   int track_msgs = 5000;
   int read_size = 2048;
@@ -106,6 +111,7 @@ char *test_multi_loop() {
                                                     format,
                                                     quality,
                                                     thread_sleep,
+                                                    max_push_msgs,
                                                     pipe_in,
                                                     pipe_out);
 

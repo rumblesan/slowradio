@@ -25,6 +25,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
                                                   int thread_sleep,
+                                                  int max_push_msgs,
                                                   RingBuffer *pipe_out) {
 
   FileReaderProcessConfig *cfg = malloc(sizeof(FileReaderProcessConfig));
@@ -32,8 +33,10 @@ FileReaderProcessConfig *filereader_config_create(int channels,
 
   cfg->channels     = channels;
   cfg->read_size    = read_size;
-  cfg->thread_sleep = thread_sleep;
   cfg->pattern      = pattern;
+
+  cfg->thread_sleep  = thread_sleep;
+  cfg->max_push_msgs = max_push_msgs;
 
   check(pipe_out != NULL, "FileReader: Invalid audio out buffer passed");
   cfg->pipe_out = pipe_out;
@@ -124,6 +127,8 @@ void *start_filereader(void *_cfg) {
   int pc_size = size / channels;
   int pc_read = 0;
 
+  int pushed_msgs = 0;
+
   struct timespec tim, tim2;
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
@@ -138,11 +143,9 @@ void *start_filereader(void *_cfg) {
   logger("FileReader", "Starting");
   int current_section;
 
-  int pushed = 0;
-  int maxpushed = 10;
   while (true) {
-    if (!opened && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
-      pushed += 1;
+    if (!opened && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
+      pushed_msgs += 1;
       logger("FileReader", "Need to open new file");
       bstring newfile = get_random_file(cfg->pattern);
       if (blength(newfile) == 0) {
@@ -176,7 +179,7 @@ void *start_filereader(void *_cfg) {
       rb_push(cfg->pipe_out, out_message);
       bdestroy(newfile);
 
-    } else if (!rb_full(cfg->pipe_out) && pushed < maxpushed) {
+    } else if (!rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
 
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
 
@@ -201,7 +204,7 @@ void *start_filereader(void *_cfg) {
       out_audio = NULL;
 
     } else {
-      pushed = 0;
+      pushed_msgs = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }

@@ -18,6 +18,7 @@ EncoderProcessConfig *encoder_config_create(int channels,
                                             int format,
                                             double quality,
                                             int thread_sleep,
+                                            int max_push_msgs,
                                             RingBuffer *pipe_in,
                                             RingBuffer *pipe_out) {
 
@@ -34,7 +35,9 @@ EncoderProcessConfig *encoder_config_create(int channels,
   cfg->samplerate   = samplerate;
   cfg->format       = format;
   cfg->quality      = quality;
-  cfg->thread_sleep = thread_sleep;
+
+  cfg->thread_sleep  = thread_sleep;
+  cfg->max_push_msgs = max_push_msgs;
 
   return cfg;
  error:
@@ -158,6 +161,7 @@ void *start_encoder(void *_cfg) {
   OggEncoderState *encoder = NULL;
 
   EncoderState state = WAITINGFORFILE;
+  int pushed_msgs = 0;
 
   check(cfg != NULL, "Encoder: Invalid config data passed");
 
@@ -167,15 +171,13 @@ void *start_encoder(void *_cfg) {
 
   logger("Encoder", "Starting");
   bool running = true;
-  int pushed = 0;
-  int maxpushed = 10;
   while (running) {
 
     if (state == CLOSINGSTREAM || state == ENCODERERROR) {
       running = false;
     }
 
-    if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
+    if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
       Message *input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Encoder: Could not get input message");
 
@@ -195,7 +197,7 @@ void *start_encoder(void *_cfg) {
       }
 
     } else {
-      pushed = 0;
+      pushed_msgs = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }

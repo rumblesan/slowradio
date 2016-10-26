@@ -14,10 +14,11 @@
 #include "bclib/dbg.h"
 #include "bclib/ringbuffer.h"
 
-StretcherProcessConfig *stretcher_config_create(float stretch,
+StretcherProcessConfig *stretcher_config_create(int channels,
                                                 int window_size,
+                                                float stretch,
                                                 int thread_sleep,
-                                                int channels,
+                                                int max_push_msgs,
                                                 RingBuffer *pipe_in,
                                                 RingBuffer *pipe_out) {
 
@@ -30,10 +31,12 @@ StretcherProcessConfig *stretcher_config_create(float stretch,
   check(pipe_out != NULL, "Invalid pipe out buffer passed");
   cfg->pipe_out = pipe_out;
 
+  cfg->channels     = channels;
   cfg->window       = window_size;
   cfg->stretch      = stretch;
-  cfg->channels     = channels;
-  cfg->thread_sleep = thread_sleep;
+
+  cfg->thread_sleep  = thread_sleep;
+  cfg->max_push_msgs = max_push_msgs;
 
   return cfg;
  error:
@@ -53,16 +56,15 @@ void *start_stretcher(void *_cfg) {
   AudioBuffer *windowed = NULL;
   AudioBuffer *stretched = NULL;
   Message *output_msg = NULL;
+  int pushed_msgs = 0;
 
   struct timespec tim, tim2;
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
 
   logger("Stretcher", "Starting");
-  int pushed = 0;
-  int maxpushed = 10;
   while (true) {
-    if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
+    if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
       input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
 
@@ -88,7 +90,7 @@ void *start_stretcher(void *_cfg) {
         input_msg = NULL;
       }
     }
-    if (!stretch->need_more_audio && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
+    if (!stretch->need_more_audio && !rb_full(cfg->pipe_out) && pushed_msgs < cfg->max_push_msgs) {
       windowed = stretch_window(stretch);
       check(windowed != NULL, "Stretcher: Couldn't get windowed audio");
       fft_run(stretch->fft, windowed);
@@ -103,7 +105,7 @@ void *start_stretcher(void *_cfg) {
       stretched = NULL;
       windowed = NULL;
     } else {
-      pushed = 0;
+      pushed_msgs = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }

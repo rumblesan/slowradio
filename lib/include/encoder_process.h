@@ -12,15 +12,15 @@ typedef enum {
 
 typedef struct EncoderProcessConfig {
 
-  RingBuffer *pipe_in;
-
-  RingBuffer *pipe_out;
-
   int channels;
   int samplerate;
   int format;
-  int thread_sleep;
   double quality;
+
+  int thread_sleep;
+  int max_push_msgs;
+  RingBuffer *pipe_in;
+  RingBuffer *pipe_out;
 
 } EncoderProcessConfig;
 
@@ -29,6 +29,7 @@ EncoderProcessConfig *encoder_config_create(int channels,
                                             int format,
                                             double quality,
                                             int thread_sleep,
+                                            int max_push_msgs,
                                             RingBuffer *pipe_in,
                                             RingBuffer *pipe_out);
 

@@ -14,6 +14,7 @@ char *test_stretcher_config_create() {
   int window_size = 2048;
   int thread_sleep = 20;
   int channels = 2;
+  int max_push_msgs = 10;
 
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
@@ -22,6 +23,7 @@ char *test_stretcher_config_create() {
                                                       window_size,
                                                       thread_sleep,
                                                       channels,
+                                                      max_push_msgs,
                                                       pipe_in,
                                                       pipe_out);
 
@@ -38,6 +40,7 @@ char *test_stretcher_loop() {
   int window_size = 2048;
   int thread_sleep = 20;
   int channels = 2;
+  int max_push_msgs = 10;
 
   int maxmsgs = 10;
 
@@ -53,6 +56,7 @@ char *test_stretcher_loop() {
                                                       window_size,
                                                       thread_sleep,
                                                       channels,
+                                                      max_push_msgs,
                                                       pipe_in,
                                                       pipe_out);
 
