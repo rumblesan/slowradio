@@ -61,10 +61,10 @@ int main (int argc, char *argv[]) {
                                             fread2stretch);
   check(filereader_cfg != NULL, "Couldn't create file reader process config");
 
-  stretcher_cfg = stretcher_config_create(radio_config->stretcher.stretch,
+  stretcher_cfg = stretcher_config_create(radio_config->channels,
                                           radio_config->stretcher.window_size,
+                                          radio_config->stretcher.stretch,
                                           radio_config->stretcher.thread_sleep,
-                                          radio_config->channels,
                                           max_push_msgs,
                                           fread2stretch,
                                           stretch2encode);
