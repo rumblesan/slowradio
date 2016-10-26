@@ -59,8 +59,10 @@ void *start_stretcher(void *_cfg) {
   tim.tv_nsec = cfg->thread_sleep;
 
   logger("Stretcher", "Starting");
+  int pushed = 0;
+  int maxpushed = 10;
   while (true) {
-    if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
+    if (stretch->need_more_audio && !rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
       input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Stretcher: Could not read input message");
 
@@ -86,7 +88,7 @@ void *start_stretcher(void *_cfg) {
         input_msg = NULL;
       }
     }
-    if (!stretch->need_more_audio && !rb_full(cfg->pipe_out)) {
+    if (!stretch->need_more_audio && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
       windowed = stretch_window(stretch);
       check(windowed != NULL, "Stretcher: Couldn't get windowed audio");
       fft_run(stretch->fft, windowed);
@@ -101,6 +103,7 @@ void *start_stretcher(void *_cfg) {
       stretched = NULL;
       windowed = NULL;
     } else {
+      pushed = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }

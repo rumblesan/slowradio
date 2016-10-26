@@ -138,8 +138,11 @@ void *start_filereader(void *_cfg) {
   logger("FileReader", "Starting");
   int current_section;
 
+  int pushed = 0;
+  int maxpushed = 10;
   while (true) {
-    if (!opened && !rb_full(cfg->pipe_out)) {
+    if (!opened && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
+      pushed += 1;
       logger("FileReader", "Need to open new file");
       bstring newfile = get_random_file(cfg->pattern);
       if (blength(newfile) == 0) {
@@ -173,7 +176,7 @@ void *start_filereader(void *_cfg) {
       rb_push(cfg->pipe_out, out_message);
       bdestroy(newfile);
 
-    } else if (!rb_full(cfg->pipe_out)) {
+    } else if (!rb_full(cfg->pipe_out) && pushed < maxpushed) {
 
       read_amount = ov_read_float(vf, &oggiob, size, &current_section);
 
@@ -198,6 +201,7 @@ void *start_filereader(void *_cfg) {
       out_audio = NULL;
 
     } else {
+      pushed = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }

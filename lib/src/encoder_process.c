@@ -167,13 +167,15 @@ void *start_encoder(void *_cfg) {
 
   logger("Encoder", "Starting");
   bool running = true;
+  int pushed = 0;
+  int maxpushed = 10;
   while (running) {
 
     if (state == CLOSINGSTREAM || state == ENCODERERROR) {
       running = false;
     }
 
-    if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out)) {
+    if (!rb_empty(cfg->pipe_in) && !rb_full(cfg->pipe_out) && pushed < maxpushed) {
       Message *input_msg = rb_pop(cfg->pipe_in);
       check(input_msg != NULL, "Encoder: Could not get input message");
 
@@ -193,6 +195,7 @@ void *start_encoder(void *_cfg) {
       }
 
     } else {
+      pushed = 0;
       sched_yield();
       nanosleep(&tim, &tim2);
     }
