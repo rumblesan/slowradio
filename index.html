@@ -5,13 +5,12 @@
 <head>
   <body>
     <div id="content">
-      <span id="cc_strinfo_summary_slowradio" class="cc_streaminfo">Loading ...</span>
 
-      <div>
-        <audio controls="controls" preload="none" autoplay>
-          <source src="http://proxima.shoutca.st:9061/stream" type="application/ogg"></source>
-        </audio>
-      </div>
+      <div id="song-info">Loading ...</div>
+
+      <audio controls="controls" preload="none">
+        <source src="http://proxima.shoutca.st:9061/stream" type="application/ogg"></source>
+      </audio>
 
       <div id="tunein">
         <a href="https://proxima.shoutca.st:2199/tunein/slowradio.pls">
@@ -33,6 +32,7 @@
       <div>Code available from <a href="https://github.com/rumblesan/slowradio">Github</a></div>
       <div>Original music is all Creative Commons licensed and pulled from <a href="https://www.jamendo.com/">Jamendo</a></div>
     </div>
-    <script language="javascript" type="text/javascript" src="https://proxima.shoutca.st/system/streaminfo.js"></script>
+    <script language="javascript" type="text/javascript" src="site/jsonp.min.js"></script>
+    <script language="javascript" type="text/javascript" src="site/streaminfo.js"></script>
   </body>
 </html>
