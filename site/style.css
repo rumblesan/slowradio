@@ -21,3 +21,14 @@ html {
 #tunein a {
     text-decoration: none;
 }
+#footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #000;
+    color: #ddd;
+    padding: 10px;
+}
+#footer a:link, #footer a:visited, #footer a:hover, #footer a:active {
+    color: #fff;
+}
