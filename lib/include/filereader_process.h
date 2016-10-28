@@ -17,6 +17,11 @@ typedef struct FileReaderProcessConfig {
   int read_size;
   bstring pattern;
 
+  // number of files to read before quitting
+  // mostly used for testing
+  // -1 means forever
+  int filenumber;
+
   int thread_sleep;
   int max_push_msgs;
   RingBuffer *pipe_out;
@@ -26,6 +31,7 @@ typedef struct FileReaderProcessConfig {
 FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
+                                                  int filenumber,
                                                   int thread_sleep,
                                                   int max_push_msgs,
                                                   RingBuffer *pipe_out);

@@ -21,6 +21,7 @@
 FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int read_size,
                                                   bstring pattern,
+                                                  int filenumber,
                                                   int thread_sleep,
                                                   int max_push_msgs,
                                                   RingBuffer *pipe_out) {
@@ -31,6 +32,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
   cfg->channels     = channels;
   cfg->read_size    = read_size;
   cfg->pattern      = pattern;
+  cfg->filenumber   = filenumber;
 
   cfg->thread_sleep  = thread_sleep;
   cfg->max_push_msgs = max_push_msgs;
@@ -94,6 +96,7 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
   *vf = new_vf;
   return READINGFILE;
  error:
+  if (new_vf != NULL) free(new_vf);
   return FILEREADERERROR;
 }
 
@@ -109,6 +112,7 @@ FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File *vf)
   if (read_amount == 0) {
     rb_push(cfg->pipe_out, track_finished_message());
     ov_clear(vf);
+    free(vf);
     return NOFILEOPENED;
   }
 
@@ -148,17 +152,23 @@ void *start_filereader(void *_cfg) {
 
   logger("FileReader", "Starting");
   FileReaderState state = NOFILEOPENED;
+  int opened_files = 0;
   bool running = true;
   while (running) {
 
     if (state == FILEREADERERROR) {
       running = false;
-    } else if (!rb_full(cfg->pipe_out) && (pushed_msgs < cfg->max_push_msgs)) {
+    } else if (!rb_full(cfg->pipe_out) && (pushed_msgs <= cfg->max_push_msgs)) {
       pushed_msgs += 1;
 
       switch (state) {
       case NOFILEOPENED:
-        state = open_file(cfg, &(vf));
+        if (cfg->filenumber == -1 || opened_files < cfg->filenumber) {
+            state = open_file(cfg, &(vf));
+            opened_files += 1;
+        } else {
+          running = false;
+        }
         break;
       case READINGFILE:
         state = read_file_data(cfg, vf);
@@ -181,6 +191,5 @@ void *start_filereader(void *_cfg) {
   if (cfg != NULL) filereader_config_destroy(cfg);
   if (vf != NULL) free(vf);
   logger("FileReader", "Cleaned up");
-  pthread_exit(NULL);
   return NULL;
 }

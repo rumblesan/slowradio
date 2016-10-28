@@ -56,6 +56,7 @@ int main (int argc, char *argv[]) {
   filereader_cfg = filereader_config_create(radio_config->channels,
                                             radio_config->filereader.read_size,
                                             radio_config->filereader.pattern,
+                                            -1,
                                             radio_config->filereader.thread_sleep,
                                             max_push_msgs,
                                             fread2stretch);
