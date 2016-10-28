@@ -73,11 +73,14 @@ char *test_stretcher_loop() {
   start_stretcher(s);
 
   mu_assert(!rb_empty(pipe_out), "Output pipe should not be empty");
+  mu_assert(rb_empty(pipe_in), "Input pipe should be empty");
 
   while (!rb_empty(pipe_out)) {
     output_msg = rb_pop(pipe_out);
+    mu_assert(output_msg != NULL, "Should not receive NULL messages");
     message_destroy(output_msg);
   }
+
 
   rb_destroy(pipe_in);
   rb_destroy(pipe_out);
