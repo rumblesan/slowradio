@@ -120,6 +120,5 @@ void *start_stretcher(void *_cfg) {
   if (stretch != NULL) stretch_destroy(stretch);
   if (cfg != NULL) stretcher_config_destroy(cfg);
   logger("Stretcher", "Cleaned up");
-  pthread_exit(NULL);
   return NULL;
 }
