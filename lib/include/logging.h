@@ -3,12 +3,10 @@
 
 #include <stdio.h>
 
-char *timenow();
+#define startup_log(P, M, ...) fprintf(stderr, "********************\nSTART: [%s] " M "\n", P, ##__VA_ARGS__) /*  */
 
-#define startup_log(P, M, ...) fprintf(stderr, "********************\n%s - START: [%s] " M "\n", timenow(), P, ##__VA_ARGS__)
+#define logger(P, M, ...) fprintf(stderr, " INFO: [%s] " M "\n", P, ##__VA_ARGS__)
 
-#define logger(P, M, ...) fprintf(stderr, "%s -  INFO: [%s] " M "\n", timenow(), P, ##__VA_ARGS__)
-
-#define err_logger(P, M, ...) fprintf(stderr, "%s - ERROR: [%s] " M "\n", timenow(), P, ##__VA_ARGS__)
+#define err_logger(P, M, ...) fprintf(stderr, "ERROR: [%s] " M "\n", P, ##__VA_ARGS__)
 
 #endif
