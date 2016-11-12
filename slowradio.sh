@@ -89,7 +89,7 @@ run()
     local optfolder="$1"
     local retries=10
     echo "Running $APP"
-    docker run --name $CONTAINER_NAME -d -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG --restart=on-failure:"$retries"
+    docker run --name $CONTAINER_NAME --restart=on-failure:"$retries" -d -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG
 }
 
 connect()
