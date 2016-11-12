@@ -191,7 +191,7 @@ void *start_broadcast(void *_cfg) {
 
  error:
   logger("Broadcast", "Finished");
-  *(cfg->status_var) = 1;
+  *(cfg->status_var) = 0;
   if (shout) {
     shout_close(shout);
     shout_shutdown();
