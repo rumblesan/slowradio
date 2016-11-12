@@ -98,6 +98,10 @@ void *start_broadcast(void *_cfg) {
 
   BroadcastProcessConfig *cfg = _cfg;
 
+  // Reroute SIGPIPE to SIG_IGN so we don't crash out if
+  // the server kills our connection
+  signal(SIGPIPE, SIG_IGN);
+
   *(cfg->status_var) = 1;
 
   int startup_wait = 2;
