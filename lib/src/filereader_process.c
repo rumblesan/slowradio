@@ -85,6 +85,7 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
 
     opened = true;
     track_info = get_track_info(new_vf);
+    check(track_info != NULL, "FileReader: Could not get track info");
     out_message = new_track_message(track_info);
     check(out_message != NULL,
           "FileReader: Could not create track info message");
@@ -99,19 +100,20 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
   return FILEREADERERROR;
 }
 
-FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File *vf) {
+FileReaderState read_file_data(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
 
   AudioBuffer *out_audio = NULL;
   Message *out_message   = NULL;
 
   float **oggiob;
 
-  long read_amount = ov_read_float(vf, &oggiob, cfg->read_size, NULL);
+  long read_amount = ov_read_float(*vf, &oggiob, cfg->read_size, NULL);
 
   if (read_amount == 0) {
     rb_push(cfg->pipe_out, track_finished_message());
-    ov_clear(vf);
-    free(vf);
+    ov_clear(*vf);
+    free(*vf);
+    *vf = NULL;
     return NOFILEOPENED;
   }
 
@@ -170,7 +172,7 @@ void *start_filereader(void *_cfg) {
         }
         break;
       case READINGFILE:
-        state = read_file_data(cfg, vf);
+        state = read_file_data(cfg, &(vf));
         break;
       case FILEREADERERROR:
         break;
