@@ -22,10 +22,12 @@ bool is_regular_file(const char *path) {
 bstring get_random_file(bstring pattern) {
   glob_t globbuf;
 
-  List *filelist = list_create();
-  check(filelist != NULL, "Could not create file list");
+  List *filelist = NULL;
 
   check(!glob(bdata(pattern), GLOB_NOSORT, NULL, &globbuf), "Could not glob folder");
+
+  filelist = list_create();
+  check(filelist != NULL, "Could not create file list");
 
   for(size_t i = 0; i < globbuf.gl_pathc; i += 1) {
     char *name = globbuf.gl_pathv[i];
@@ -44,5 +46,6 @@ bstring get_random_file(bstring pattern) {
   list_destroy(filelist);
   return fname;
  error:
+  if (filelist != NULL) list_destroy(filelist);
   return bfromcstr("");
 }
