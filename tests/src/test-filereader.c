@@ -10,7 +10,7 @@
 char *test_filereader_config_create() {
   int channels = 2;
   int read_size = 1024;
-  bstring pattern = bfromcstr("../../main/audio/*.ogg");
+  bstring pattern = bfromcstr("../../audio/*.ogg");
   int thread_sleep = 20;
   int max_push_msgs = 20;
 
@@ -34,7 +34,7 @@ char *test_filereader_config_create() {
 char *test_filereader_loop() {
   int channels = 2;
   int read_size = 4096;
-  bstring pattern = bfromcstr("../tests/audio/*.ogg");
+  bstring pattern = bfromcstr("../../audio/*.ogg");
   int thread_sleep = 20;
   int max_push_msgs = 20;
 
