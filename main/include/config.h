@@ -36,6 +36,7 @@ typedef struct BroadcastInputCfg {
 typedef struct RadioInputCfg {
 
   int channels;
+  int stats_interval;
   const char *htest;
 
   FileReaderInputCfg filereader;

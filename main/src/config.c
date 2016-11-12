@@ -34,6 +34,10 @@ RadioInputCfg *read_config(char *config_path) {
   check(config_lookup_int(cfg, "channels", &(radio_config->channels)),
         "Could not read channels setting");
 
+  // Stats interval config
+  check(config_lookup_int(cfg, "stats_interval", &(radio_config->stats_interval)),
+        "Could not read stats interval setting");
+
   // File Reader config
   config_setting_t *frsetting = config_lookup(cfg, "filereader");
   check(frsetting != NULL &&

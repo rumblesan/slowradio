@@ -124,7 +124,7 @@ int main (int argc, char *argv[]) {
   int st2enc_msgs = 0;
   int enc2brd_msgs = 0;
   while (1) {
-    sleep(30);
+    sleep(radio_config->stats_interval);
     if (broadcast_status != 0) {
       rd2st_msgs = rb_size(fread2stretch);
       st2enc_msgs = rb_size(stretch2encode);
