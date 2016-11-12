@@ -56,15 +56,13 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
   TrackInfo *track_info = NULL;
   Message *out_message = NULL;
   OggVorbis_File *new_vf = NULL;
+  bstring newfile = NULL;
 
   bool opened = false;
   while (!opened) {
-    bstring newfile = get_random_file(cfg->pattern);
+    newfile = get_random_file(cfg->pattern);
 
-    if (blength(newfile) == 0) {
-      err_logger("FileReader", "Could not get random file");
-      continue;
-    }
+    check(blength(newfile) > 0, "Could not get random file");
 
     logger("FileReader", "New file: %s", bdata(newfile));
     new_vf = malloc(sizeof(OggVorbis_File));
@@ -97,6 +95,7 @@ FileReaderState open_file(FileReaderProcessConfig *cfg, OggVorbis_File **vf) {
   return READINGFILE;
  error:
   if (new_vf != NULL) free(new_vf);
+  if (newfile != NULL) bdestroy(newfile);
   return FILEREADERERROR;
 }
 
