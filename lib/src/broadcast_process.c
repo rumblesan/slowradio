@@ -3,6 +3,7 @@
 #include <pthread.h>
 #include <unistd.h>
 #include <stdbool.h>
+#include <signal.h>
 
 #include <shout/shout.h>
 
