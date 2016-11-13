@@ -80,6 +80,7 @@ RadioInputCfg *read_config(char *config_path) {
   return radio_config;
  error:
   if (cfg != NULL) config_destroy(cfg);
+  if (radio_config != NULL) free(radio_config);
   return NULL;
 };
 
