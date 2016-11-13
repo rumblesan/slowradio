@@ -200,6 +200,7 @@ void *start_broadcast(void *_cfg) {
   if (shout) {
     shout_close(shout);
     shout_shutdown();
+    shout_free(shout);
   }
   broadcast_config_destroy(cfg);
   logger("Broadcast", "Cleaned up");
