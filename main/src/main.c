@@ -44,9 +44,13 @@ int main (int argc, char *argv[]) {
   BroadcastProcessConfig *broadcast_cfg = NULL;
 
   pthread_t reader_thread;
+  pthread_attr_t reader_thread_attr;
   pthread_t stretcher_thread;
+  pthread_attr_t stretcher_thread_attr;
   pthread_t encoder_thread;
+  pthread_attr_t encoder_thread_attr;
   pthread_t broadcast_thread;
+  pthread_attr_t broadcast_thread_attr;
   int broadcast_status = 0;
 
   startup_log("SlowRadio", "Hello, Slow Radio");
@@ -110,26 +114,42 @@ int main (int argc, char *argv[]) {
   check(broadcast_cfg != NULL, "Couldn't create broadcast process config");
 
 
+  check(!pthread_attr_init(&reader_thread_attr),
+        "Error setting reader thread attributes");
+  check(!pthread_attr_setdetachstate(&reader_thread_attr, PTHREAD_CREATE_DETACHED),
+        "Error setting reader thread detach state");
   check(!pthread_create(&reader_thread,
-                        NULL,
+                        &reader_thread_attr,
                         &start_filereader,
                         filereader_cfg),
         "Error creating file reader thread");
 
+  check(!pthread_attr_init(&stretcher_thread_attr),
+        "Error setting stretcher thread attributes");
+  check(!pthread_attr_setdetachstate(&stretcher_thread_attr, PTHREAD_CREATE_DETACHED),
+        "Error setting stretcher thread detach state");
   check(!pthread_create(&stretcher_thread,
-                        NULL,
+                        &stretcher_thread_attr,
                         &start_stretcher,
                         stretcher_cfg),
         "Error creating stretcher thread");
 
+  check(!pthread_attr_init(&encoder_thread_attr),
+        "Error setting encoder thread attributes");
+  check(!pthread_attr_setdetachstate(&encoder_thread_attr, PTHREAD_CREATE_DETACHED),
+        "Error setting encoder thread detach state");
   check(!pthread_create(&encoder_thread,
-                        NULL,
+                        &encoder_thread_attr,
                         &start_encoder,
                         encoder_cfg),
         "Error creating encoder thread");
 
+  check(!pthread_attr_init(&broadcast_thread_attr),
+        "Error setting broadcast thread attributes");
+  check(!pthread_attr_setdetachstate(&broadcast_thread_attr, PTHREAD_CREATE_DETACHED),
+        "Error setting broadcast thread detach state");
   check(!pthread_create(&broadcast_thread,
-                        NULL,
+                        &broadcast_thread_attr,
                         &start_broadcast,
                         broadcast_cfg),
         "Error creating broadcasting thread");
