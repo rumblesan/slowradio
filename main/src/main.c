@@ -11,10 +11,24 @@
 #include "broadcast_process.h"
 #include "config.h"
 #include "logging.h"
+#include "messages.h"
 
 #include "bclib/dbg.h"
 #include "bclib/bstrlib.h"
 
+int cleanup_pipe(RingBuffer *pipe, const char *pipename) {
+  Message *pipe_msg = NULL;
+  check(pipe != NULL, "Invalid pipe passed in");
+  while (!rb_empty(pipe)) {
+    pipe_msg = rb_pop(pipe);
+    check(pipe_msg != NULL, "Null message whilst emptying %s pipe", pipename);
+    message_destroy(pipe_msg);
+  }
+  rb_destroy(pipe);
+  return 0;
+ error:
+  return 1;
+}
 
 int main (int argc, char *argv[]) {
 
@@ -141,9 +155,11 @@ int main (int argc, char *argv[]) {
   logger("SlowRadio", "Cleaning up");
   // TODO create radio_config_destroy
   // if (radio_config != NULL) radio_config_destroy(radio_config);
-  if (fread2stretch != NULL) rb_destroy(fread2stretch);
-  if (stretch2encode != NULL) rb_destroy(stretch2encode);
-  if (encode2broadcast != NULL) rb_destroy(encode2broadcast);
+
+  cleanup_pipe(fread2stretch, "Read to Stretch");
+  cleanup_pipe(stretch2encode, "Stretch to Encode");
+  cleanup_pipe(encode2broadcast, "Encode to Broadcast");
+
   if (filereader_cfg != NULL) filereader_config_destroy(filereader_cfg);
   if (stretcher_cfg != NULL) stretcher_config_destroy(stretcher_cfg);
   if (encoder_cfg != NULL) encoder_config_destroy(encoder_cfg);
