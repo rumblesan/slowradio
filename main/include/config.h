@@ -37,7 +37,6 @@ typedef struct RadioInputCfg {
 
   int channels;
   int stats_interval;
-  const char *htest;
 
   FileReaderInputCfg filereader;
   StretcherInputCfg stretcher;
@@ -47,5 +46,7 @@ typedef struct RadioInputCfg {
 } RadioInputCfg;
 
 RadioInputCfg *read_config(char *config_path);
+
+void destroy_config(RadioInputCfg *cfg);
 
 #endif

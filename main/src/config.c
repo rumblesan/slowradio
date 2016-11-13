@@ -83,4 +83,20 @@ RadioInputCfg *read_config(char *config_path) {
   return NULL;
 };
 
+void destroy_config(RadioInputCfg *cfg) {
+  check(cfg != NULL, "Invalid config");
+  bdestroy(cfg->filereader.pattern);
 
+  bdestroy(cfg->broadcast.host);
+  bdestroy(cfg->broadcast.source);
+  bdestroy(cfg->broadcast.password);
+  bdestroy(cfg->broadcast.mount);
+  bdestroy(cfg->broadcast.name);
+  bdestroy(cfg->broadcast.description);
+  bdestroy(cfg->broadcast.genre);
+  bdestroy(cfg->broadcast.url);
+  free(cfg);
+  return;
+ error:
+  return;
+}

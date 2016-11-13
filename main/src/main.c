@@ -153,8 +153,7 @@ int main (int argc, char *argv[]) {
   return 0;
  error:
   logger("SlowRadio", "Cleaning up");
-  // TODO create radio_config_destroy
-  // if (radio_config != NULL) radio_config_destroy(radio_config);
+  if (radio_config != NULL) destroy_config(radio_config);
 
   cleanup_pipe(fread2stretch, "Read to Stretch");
   cleanup_pipe(stretch2encode, "Stretch to Encode");
