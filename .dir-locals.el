@@ -4,4 +4,5 @@
 ((c-mode . ((flycheck-clang-include-path . (
                                             "./lib/include"
                                             "./main/include"
+                                            "./tests/include"
                                              )))))
