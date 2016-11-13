@@ -7,6 +7,7 @@ set(TEST_SOURCES
     "src/test-messages.c"
     "src/test-stretcher.c"
     "src/test-filereader.c"
+    "src/test-config.c"
     )
 
 foreach(TEST_FILE ${SOURCES} ${TEST_SOURCES})

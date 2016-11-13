@@ -13,12 +13,14 @@ set(SOURCES
   "src/filechunk.c"
   "src/file_utils.c"
   "src/ogg_utils.c"
+  "src/config.c"
   )
 
 add_library(slow ${SOURCES})
 
 target_link_libraries(slow shout m)
 target_link_libraries(slow bclib)
+target_link_libraries(slow config)
 target_link_libraries(slow pstretch fftw3f)
 target_link_libraries(slow vorbis vorbisfile ogg vorbisenc)
 target_link_libraries(slow pthread)
