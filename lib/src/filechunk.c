@@ -6,7 +6,7 @@
 FileChunk *file_chunk_create() {
   FileChunk *chunk = malloc(sizeof(FileChunk));
   check_mem(chunk);
-  chunk->data = malloc(0);
+  chunk->data = NULL;
   chunk->length = 0;
   return chunk;
  error:
@@ -39,8 +39,7 @@ FileChunk *file_chunk_extend(FileChunk *chunk, unsigned char *addition, int addl
 
 void file_chunk_destroy(FileChunk *chunk) {
   check(chunk != NULL, "Invalid file chunk");
-  check(chunk->data != NULL, "Invalid data in file chunk");
-  free(chunk->data);
+  if (chunk->data != NULL) free(chunk->data);
   free(chunk);
  error:
   return;
