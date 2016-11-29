@@ -170,7 +170,7 @@ int main (int argc, char *argv[]) {
     }
   }
 
-  return 0;
+  logger("SlowRadio", "Stopping");
  error:
   logger("SlowRadio", "Cleaning up");
   if (radio_config != NULL) destroy_config(radio_config);
@@ -184,5 +184,7 @@ int main (int argc, char *argv[]) {
   if (encoder_cfg != NULL) encoder_config_destroy(encoder_cfg);
   if (broadcast_cfg != NULL) broadcast_config_destroy(broadcast_cfg);
 
+  // Always exit with non-zero as this is meant to be
+  // a never-ending process
   return 1;
 }
