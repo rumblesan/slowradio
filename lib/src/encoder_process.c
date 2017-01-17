@@ -19,6 +19,7 @@ EncoderProcessConfig *encoder_config_create(int channels,
                                             double quality,
                                             int thread_sleep,
                                             int max_push_msgs,
+                                            int *status_var,
                                             RingBuffer *pipe_in,
                                             RingBuffer *pipe_out) {
 
@@ -35,6 +36,8 @@ EncoderProcessConfig *encoder_config_create(int channels,
   cfg->samplerate   = samplerate;
   cfg->format       = format;
   cfg->quality      = quality;
+
+  cfg->status_var = status_var;
 
   cfg->thread_sleep  = thread_sleep;
   cfg->max_push_msgs = max_push_msgs;
@@ -170,6 +173,7 @@ void *start_encoder(void *_cfg) {
   tim.tv_nsec = cfg->thread_sleep;
 
   logger("Encoder", "Starting");
+  *(cfg->status_var) = 1;
   bool running = true;
   while (running) {
 
@@ -208,6 +212,7 @@ void *start_encoder(void *_cfg) {
 
  error:
   logger("Encoder", "Finished");
+  *(cfg->status_var) = 0;
   if (cfg != NULL) encoder_config_destroy(cfg);
   if (encoder != NULL) cleanup_encoder(encoder);
   logger("Encoder", "Cleaned up");

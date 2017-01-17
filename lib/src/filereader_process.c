@@ -24,6 +24,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int filenumber,
                                                   int thread_sleep,
                                                   int max_push_msgs,
+                                                  int *status_var,
                                                   RingBuffer *pipe_out) {
 
   FileReaderProcessConfig *cfg = malloc(sizeof(FileReaderProcessConfig));
@@ -36,6 +37,9 @@ FileReaderProcessConfig *filereader_config_create(int channels,
 
   cfg->thread_sleep  = thread_sleep;
   cfg->max_push_msgs = max_push_msgs;
+
+  check(status_var != NULL, "FileReader: Status_variable");
+  cfg->status_var = status_var;
 
   check(pipe_out != NULL, "FileReader: Invalid audio out buffer passed");
   cfg->pipe_out = pipe_out;
@@ -141,6 +145,8 @@ void *start_filereader(void *_cfg) {
 
   OggVorbis_File *vf = NULL;
 
+  *(cfg->status_var) = 1;
+
   srand(time(NULL));
 
   check(cfg != NULL, "FileReader: Invalid info data passed");
@@ -189,6 +195,7 @@ void *start_filereader(void *_cfg) {
 
  error:
   logger("FileReader", "Finished");
+  *(cfg->status_var) = 0;
   if (cfg != NULL) filereader_config_destroy(cfg);
   if (vf != NULL) free(vf);
   logger("FileReader", "Cleaned up");

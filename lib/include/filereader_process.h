@@ -24,6 +24,9 @@ typedef struct FileReaderProcessConfig {
 
   int thread_sleep;
   int max_push_msgs;
+
+  int *status_var;
+
   RingBuffer *pipe_out;
 
 } FileReaderProcessConfig;
@@ -34,6 +37,7 @@ FileReaderProcessConfig *filereader_config_create(int channels,
                                                   int filenumber,
                                                   int thread_sleep,
                                                   int max_push_msgs,
+                                                  int *status_var,
                                                   RingBuffer *pipe_out);
 
 void filereader_config_destroy(FileReaderProcessConfig *cfg);

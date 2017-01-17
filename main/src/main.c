@@ -51,6 +51,9 @@ int main (int argc, char *argv[]) {
   pthread_attr_t encoder_thread_attr;
   pthread_t broadcast_thread;
   pthread_attr_t broadcast_thread_attr;
+  int filereader_status = 0;
+  int encoder_status = 0;
+  int stretcher_status = 0;
   int broadcast_status = 0;
 
   startup_log("SlowRadio", "Hello, Slow Radio");
@@ -77,6 +80,7 @@ int main (int argc, char *argv[]) {
                                             -1,
                                             radio_config->filereader.thread_sleep,
                                             max_push_msgs,
+                                            &filereader_status,
                                             fread2stretch);
   check(filereader_cfg != NULL, "Couldn't create file reader process config");
 
@@ -85,6 +89,7 @@ int main (int argc, char *argv[]) {
                                           radio_config->stretcher.stretch,
                                           radio_config->stretcher.thread_sleep,
                                           max_push_msgs,
+                                          &stretcher_status,
                                           fread2stretch,
                                           stretch2encode);
   check(stretcher_cfg != NULL, "Couldn't create stretcher process config");
@@ -95,6 +100,7 @@ int main (int argc, char *argv[]) {
                                       radio_config->encoder.quality,
                                       radio_config->encoder.thread_sleep,
                                       max_push_msgs,
+                                      &encoder_status,
                                       stretch2encode, encode2broadcast);
   check(encoder_cfg != NULL, "Couldn't create encoder process config");
 
@@ -159,15 +165,26 @@ int main (int argc, char *argv[]) {
   int enc2brd_msgs = 0;
   while (1) {
     sleep(radio_config->stats_interval);
-    if (broadcast_status != 0) {
-      rd2st_msgs = rb_size(fread2stretch);
-      st2enc_msgs = rb_size(stretch2encode);
-      enc2brd_msgs = rb_size(encode2broadcast);
-      logger("SlowRadio", "Messages: reader %d stretcher %d encoder %d broadcast", rd2st_msgs, st2enc_msgs, enc2brd_msgs);
-    } else {
+    if (filereader_status == 0) {
+      err_logger("SlowRadio", "Stopped Reading Files!");
+      break;
+    }
+    if (stretcher_status == 0) {
+      err_logger("SlowRadio", "Stopped Stretching!");
+      break;
+    }
+    if (encoder_status == 0) {
+      err_logger("SlowRadio", "Stopped Encoding!");
+      break;
+    }
+    if (broadcast_status == 0) {
       err_logger("SlowRadio", "Stopped Broadcasting!");
       break;
     }
+    rd2st_msgs = rb_size(fread2stretch);
+    st2enc_msgs = rb_size(stretch2encode);
+    enc2brd_msgs = rb_size(encode2broadcast);
+    logger("SlowRadio", "Messages: reader %d stretcher %d encoder %d broadcast", rd2st_msgs, st2enc_msgs, enc2brd_msgs);
   }
 
   logger("SlowRadio", "Stopping");

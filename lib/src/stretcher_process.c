@@ -19,6 +19,7 @@ StretcherProcessConfig *stretcher_config_create(int channels,
                                                 float stretch,
                                                 int thread_sleep,
                                                 int max_push_msgs,
+                                                int *status_var,
                                                 RingBuffer *pipe_in,
                                                 RingBuffer *pipe_out) {
 
@@ -34,6 +35,8 @@ StretcherProcessConfig *stretcher_config_create(int channels,
   cfg->channels     = channels;
   cfg->window       = window_size;
   cfg->stretch      = stretch;
+
+  cfg->status_var   = status_var;
 
   cfg->thread_sleep  = thread_sleep;
   cfg->max_push_msgs = max_push_msgs;
@@ -61,6 +64,8 @@ void *start_stretcher(void *_cfg) {
   struct timespec tim, tim2;
   tim.tv_sec = 0;
   tim.tv_nsec = cfg->thread_sleep;
+
+  *(cfg->status_var) = 1;
 
   logger("Stretcher", "Starting");
   while (true) {
@@ -113,6 +118,7 @@ void *start_stretcher(void *_cfg) {
 
  error:
   logger("Stretcher", "Finished");
+  *(cfg->status_var) = 0;
   if (input_msg != NULL) message_destroy(input_msg);
   if (windowed != NULL) audio_buffer_destroy(windowed);
   if (stretched != NULL) audio_buffer_destroy(stretched);

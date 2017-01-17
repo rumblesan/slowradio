@@ -15,6 +15,7 @@ char *test_stretcher_config_create() {
   int thread_sleep = 20;
   int channels = 2;
   int max_push_msgs = 10;
+  int stretcher_status;
 
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
@@ -24,6 +25,7 @@ char *test_stretcher_config_create() {
                                                       thread_sleep,
                                                       channels,
                                                       max_push_msgs,
+                                                      &stretcher_status,
                                                       pipe_in,
                                                       pipe_out);
 
@@ -41,6 +43,7 @@ char *test_stretcher_loop() {
   int thread_sleep = 20;
   int channels = 2;
   int max_push_msgs = 10;
+  int stretcher_status = -1;
 
   int maxmsgs = 10;
 
@@ -57,6 +60,7 @@ char *test_stretcher_loop() {
                                                       stretch,
                                                       thread_sleep,
                                                       max_push_msgs,
+                                                      &stretcher_status,
                                                       pipe_in,
                                                       pipe_out);
 
@@ -81,6 +85,7 @@ char *test_stretcher_loop() {
     message_destroy(output_msg);
   }
 
+  mu_assert(stretcher_status == 0, "Stretcher status should be 0");
 
   rb_destroy(pipe_in);
   rb_destroy(pipe_out);

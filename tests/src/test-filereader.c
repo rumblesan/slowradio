@@ -13,6 +13,7 @@ char *test_filereader_config_create() {
   bstring pattern = bfromcstr("../../audio/*.ogg");
   int thread_sleep = 20;
   int max_push_msgs = 20;
+  int filereader_status;
 
   RingBuffer *pipe_out = rb_create(100);
 
@@ -22,6 +23,7 @@ char *test_filereader_config_create() {
                                                         -1,
                                                         thread_sleep,
                                                         max_push_msgs,
+                                                        &filereader_status,
                                                         pipe_out);
 
   mu_assert(s != NULL, "Could not create filereader config");
@@ -37,6 +39,7 @@ char *test_filereader_loop() {
   bstring pattern = bfromcstr("../../audio/*.ogg");
   int thread_sleep = 20;
   int max_push_msgs = 20;
+  int filereader_status = -1;
 
   RingBuffer *pipe_out = rb_create(100000);
 
@@ -48,6 +51,7 @@ char *test_filereader_loop() {
                                                           4,
                                                           thread_sleep,
                                                           max_push_msgs,
+                                                          &filereader_status,
                                                           pipe_out);
 
   mu_assert(cfg != NULL, "Could not create filereader config");
@@ -61,6 +65,7 @@ char *test_filereader_loop() {
     message_destroy(output_msg);
   }
 
+  mu_assert(filereader_status == 0, "FileReader status should be 0");
   rb_destroy(pipe_out);
   return NULL;
 }

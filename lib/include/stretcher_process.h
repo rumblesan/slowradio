@@ -11,6 +11,9 @@ typedef struct StretcherProcessConfig {
 
   int thread_sleep;
   int max_push_msgs;
+
+  int *status_var;
+
   RingBuffer *pipe_in;
   RingBuffer *pipe_out;
 
@@ -21,6 +24,7 @@ StretcherProcessConfig *stretcher_config_create(int channels,
                                                 float stretch,
                                                 int thread_sleep,
                                                 int max_push_msgs,
+                                                int *status_var,
                                                 RingBuffer *pipe_in,
                                                 RingBuffer *pipe_out);
 

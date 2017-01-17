@@ -15,6 +15,8 @@ char *test_encoder_config_create() {
   double quality = 0.7;
   int max_push_msgs = 10;
   int thread_sleep = 20;
+  int encoder_status;
+
   RingBuffer *pipe_in = rb_create(100);
   RingBuffer *pipe_out = rb_create(100);
 
@@ -24,6 +26,7 @@ char *test_encoder_config_create() {
                                                     quality,
                                                     thread_sleep,
                                                     max_push_msgs,
+                                                    &encoder_status,
                                                     pipe_in,
                                                     pipe_out);
 
@@ -44,6 +47,7 @@ char *test_encoder_loop() {
   int thread_sleep = 20;
   int maxmsgs = 5000;
   int read_size = 2048;
+  int encoder_status = -1;
 
   TrackInfo *track_info = track_info_create(bfromcstr("artist"), bfromcstr("title"));
   Message *input_msg = NULL;
@@ -59,6 +63,7 @@ char *test_encoder_loop() {
                                                     quality,
                                                     thread_sleep,
                                                     max_push_msgs,
+                                                    &encoder_status,
                                                     pipe_in,
                                                     pipe_out);
 
@@ -83,6 +88,8 @@ char *test_encoder_loop() {
     message_destroy(output_msg);
   }
 
+  mu_assert(encoder_status == 0, "Encoder status should be 0");
+
   rb_destroy(pipe_in);
   rb_destroy(pipe_out);
   return NULL;
@@ -99,6 +106,7 @@ char *test_multi_loop() {
   int track_msgs = 5000;
   int read_size = 2048;
   TrackInfo *track_info = NULL;
+  int encoder_status = -1;
   Message *input_msg = NULL;
   Message *output_msg = NULL;
   AudioBuffer *audio = NULL;
@@ -112,6 +120,7 @@ char *test_multi_loop() {
                                                     quality,
                                                     thread_sleep,
                                                     max_push_msgs,
+                                                    &encoder_status,
                                                     pipe_in,
                                                     pipe_out);
 
@@ -143,6 +152,7 @@ char *test_multi_loop() {
     message_destroy(output_msg);
   }
 
+  mu_assert(encoder_status == 0, "Encoder status should be 0");
 
   rb_destroy(pipe_in);
   rb_destroy(pipe_out);
