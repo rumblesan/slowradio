@@ -26,7 +26,7 @@ WORKDIR /opt/slowradio
 RUN cd build; cmake ..; make
 
 
-FROM debian:8.6
+FROM debian:jessie-slim
 
 RUN apt-get update
 RUN apt-get install -y libfftw3-3 libshout3 libconfig9 libvorbis-dev libsndfile1
