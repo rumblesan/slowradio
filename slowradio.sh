@@ -3,18 +3,16 @@
 CONTROL_SH=$(basename "$0")
 oneline_usage="$CONTROL_SH [-h] command [args]"
 
-usage()
-{
-    cat <<-EndUsage
+usage() {
+  cat <<-EndUsage
 		Usage: $oneline_usage
 		Use '$CONTROL_SH -h' for more information
 	EndUsage
-    exit 1
+  exit 1
 }
 
-helpinfo()
-{
-cat <<-EndHelp
+helpinfo() {
+  cat <<-EndHelp
 Usage: $oneline_usage
 
 Commands:
@@ -41,103 +39,94 @@ Flags:
         Show usage info
 
 EndHelp
-exit 0
+  exit 0
 }
 
-die()
-{
-    echo "$*"
-    exit 1
+die() {
+  echo "$*"
+  exit 1
 }
 
 readonly REPO="rumblesan"
 readonly APP="slowradio"
 
-build()
-{
-    echo "Building new $REPO/$APP image with tag $DOCKER_TAG"
-    docker build -t $REPO/$APP:$DOCKER_TAG .
+build() {
+  echo "Building new $REPO/$APP image with tag $DOCKER_TAG"
+  docker build -t $REPO/$APP:$DOCKER_TAG .
 }
 
-push()
-{
-    echo "Pushing new $REPO/$APP image with tag $DOCKER_TAG"
-    docker push $REPO/$APP:$DOCKER_TAG
+push() {
+  echo "Pushing new $REPO/$APP image with tag $DOCKER_TAG"
+  docker push $REPO/$APP:$DOCKER_TAG
 }
 
-pull()
-{
-    echo "Pulling new $REPO/$APP image with tag $DOCKER_TAG"
-    docker pull $REPO/$APP:$DOCKER_TAG
+pull() {
+  echo "Pulling new $REPO/$APP image with tag $DOCKER_TAG"
+  docker pull $REPO/$APP:$DOCKER_TAG
 }
 
-foreground()
-{
-    if [ -z "$1" ]; then
-        die "Need to give opt folder"
-    fi
-    local optfolder="$1"
-    echo "Running $APP in the foreground"
-    docker run --name $CONTAINER_NAME -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG 
+foreground() {
+  if [ -z "$1" ]; then
+    die "Need to give opt folder"
+  fi
+  local optfolder="$1"
+  echo "Running $APP in the foreground"
+  docker run --name $CONTAINER_NAME -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG
 }
 
-run()
-{
-    if [ -z "$1" ]; then
-        die "Need to give opt folder"
-    fi
-    local optfolder="$1"
-    local retries=10
-    echo "Running $APP"
-    docker run --name $CONTAINER_NAME --restart=on-failure:"$retries" -d -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG
+run() {
+  if [ -z "$1" ]; then
+    die "Need to give opt folder"
+  fi
+  local optfolder="$1"
+  local retries=10
+  echo "Running $APP"
+  docker run --name $CONTAINER_NAME --restart=on-failure:"$retries" -d -v "$1":/opt/slowradio $REPO/$APP:$DOCKER_TAG
 }
 
-connect()
-{
-    echo "Connecting to $CONTAINER_NAME"
-    docker exec -it $CONTAINER_NAME bash
+connect() {
+  echo "Connecting to $CONTAINER_NAME"
+  docker exec -it $CONTAINER_NAME bash
 }
 
-stats()
-{
-    echo "Connecting to $CONTAINER_NAME"
-    docker exec $CONTAINER_NAME ps up $(docker exec $CONTAINER_NAME pgrep -f 'slow')
+stats() {
+  echo "Connecting to $CONTAINER_NAME"
+  docker exec $CONTAINER_NAME ps up $(docker exec $CONTAINER_NAME pgrep -f 'slow')
 }
 
-runaction()
-{
-    if [ ! -f Dockerfile ]; then
-        die "This script needs to be run in the same directory as the Dockerfile"
-    fi
+runaction() {
+  if [ ! -f Dockerfile ]; then
+    die "This script needs to be run in the same directory as the Dockerfile"
+  fi
 
-    action=$( printf "%s\n" "$1" | tr 'A-Z' 'a-z' )
+  action=$(printf "%s\n" "$1" | tr 'A-Z' 'a-z')
 
-    case "$action" in
-    "build" )
-        build
-        ;;
-    "push" )
-        push
-        ;;
-    "pull" )
-        pull
-        ;;
-    "foreground" )
-        foreground "${@:2}"
-        ;;
-    "run" )
-        run "${@:2}"
-        ;;
-    "connect" )
-        connect
-        ;;
-    "stats" )
-        stats
-        ;;
-    * )
-        usage
-        ;;
-    esac
+  case "$action" in
+    "build")
+      build
+      ;;
+    "push")
+      push
+      ;;
+    "pull")
+      pull
+      ;;
+    "foreground")
+      foreground "${@:2}"
+      ;;
+    "run")
+      run "${@:2}"
+      ;;
+    "connect")
+      connect
+      ;;
+    "stats")
+      stats
+      ;;
+    *)
+      usage
+      ;;
+  esac
 
 }
 
@@ -147,19 +136,18 @@ CONTAINER_NAME="slowradio"
 DOCKER_TAG="latest"
 
 while getopts "h:n::t:" opt "$@"; do
-    case "$opt" in
-        h)
-            helpinfo
-            ;;
-        n)
-            CONTAINER_NAME="$OPTARG"
-            echo "Using docker tag $CONTAINER_NAME"
-            ;;
-        t)
-            DOCKER_TAG="$OPTARG"
-            echo "Using docker tag $DOCKER_TAG"
-            ;;
-    esac
+  case "$opt" in
+    h)
+      helpinfo
+      ;;
+    n)
+      CONTAINER_NAME="$OPTARG"
+      echo "Using docker tag $CONTAINER_NAME"
+      ;;
+    t)
+      DOCKER_TAG="$OPTARG"
+      echo "Using docker tag $DOCKER_TAG"
+      ;;
+  esac
 done
 runaction "${@:$OPTIND}"
-
