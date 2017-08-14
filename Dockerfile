@@ -1,4 +1,4 @@
-FROM debian:8.6
+FROM debian:8.6 as builder
 
 MAINTAINER Guy John <slowradio@rumblesan.com>
 
@@ -23,6 +23,15 @@ COPY main /opt/slowradio/main
 COPY tests /opt/slowradio/tests
 
 WORKDIR /opt/slowradio
-RUN cd build; cmake ..; make; make install
+RUN cd build; cmake ..; make
+
+
+FROM debian:8.6
+
+RUN apt-get update
+RUN apt-get install -y libfftw3-3 libshout3 libconfig9 libvorbis-dev libsndfile1
+RUN mkdir -p /opt/slowradio
+WORKDIR /opt/slowradio
+COPY --from=builder /opt/slowradio/build/main/slowradio /usr/local/bin/
 
 CMD ["slowradio", "/opt/slowradio/radio.cfg"]
