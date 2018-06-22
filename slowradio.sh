@@ -5,9 +5,9 @@ oneline_usage="$CONTROL_SH [-h] command [args]"
 
 usage() {
   cat <<-EndUsage
-		Usage: $oneline_usage
-		Use '$CONTROL_SH -h' for more information
-	EndUsage
+Usage: $oneline_usage
+Use '$CONTROL_SH -h' for more information
+EndUsage
   exit 1
 }
 
@@ -102,30 +102,30 @@ runaction() {
   action=$(printf "%s\n" "$1" | tr 'A-Z' 'a-z')
 
   case "$action" in
-    "build")
-      build
-      ;;
-    "push")
-      push
-      ;;
-    "pull")
-      pull
-      ;;
-    "foreground")
-      foreground "${@:2}"
-      ;;
-    "run")
-      run "${@:2}"
-      ;;
-    "connect")
-      connect
-      ;;
-    "stats")
-      stats
-      ;;
-    *)
-      usage
-      ;;
+  "build")
+    build
+    ;;
+  "push")
+    push
+    ;;
+  "pull")
+    pull
+    ;;
+  "foreground")
+    foreground "${@:2}"
+    ;;
+  "run")
+    run "${@:2}"
+    ;;
+  "connect")
+    connect
+    ;;
+  "stats")
+    stats
+    ;;
+  *)
+    usage
+    ;;
   esac
 
 }
@@ -135,19 +135,19 @@ echo "$APP control"
 CONTAINER_NAME="slowradio"
 DOCKER_TAG="latest"
 
-while getopts "h:n::t:" opt "$@"; do
+while getopts "hn::t:" opt "$@"; do
   case "$opt" in
-    h)
-      helpinfo
-      ;;
-    n)
-      CONTAINER_NAME="$OPTARG"
-      echo "Using docker tag $CONTAINER_NAME"
-      ;;
-    t)
-      DOCKER_TAG="$OPTARG"
-      echo "Using docker tag $DOCKER_TAG"
-      ;;
+  h)
+    helpinfo
+    ;;
+  n)
+    CONTAINER_NAME="$OPTARG"
+    echo "Using docker tag $CONTAINER_NAME"
+    ;;
+  t)
+    DOCKER_TAG="$OPTARG"
+    echo "Using docker tag $DOCKER_TAG"
+    ;;
   esac
 done
 runaction "${@:$OPTIND}"
